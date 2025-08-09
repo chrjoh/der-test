@@ -81,6 +81,16 @@ fn decode_bit_string_value(bytes: &[u8]) -> Option<DecodedValue> {
         data: bit_data,
     })
 }
+// value to get: 113549
+// Start with value = 0
+// value = (0 << 7) | 0x06 = 6
+// value = (6 << 7) | 0x77 = 845
+// value = (845 << 7) | 0x0D = 113549
+//
+// 6 = 00000110
+// Shift left by 7 bits:(This means we add 7 zeros to the right)
+// 00000110 << 7 = 0011000000000
+//
 fn decode_object_identifier_value(bytes: &[u8]) -> Option<DecodedValue> {
     if bytes.is_empty() {
         return None;

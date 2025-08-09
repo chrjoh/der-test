@@ -79,7 +79,10 @@ pub fn encode_utf8_string(data: String) -> Vec<u8> {
     result.extend(bytes);
     result
 }
-
+// This is base-128 encoding of 113549.
+// 0x86: 10000110 → data bits 0000110 (0x06)→ continuation
+// 0xF7: 11110111 → data bits 01110111 (0x77)→ continuation
+// 0x0D: 00001101 → data bits 00001101 (0x0D)→ last byte
 pub fn encode_object_identifier(oid: &str) -> Option<Vec<u8>> {
     let parts: Vec<u32> = oid.split('.').filter_map(|s| s.parse().ok()).collect();
     if parts.len() < 2 {

@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 mod decoder;
 mod encoder;
 mod types;
@@ -7,6 +8,7 @@ use crate::encoder::{
     encode_bit_string, encode_boolean, encode_integer, encode_object_identifier,
     encode_octet_string, encode_sequence, encode_set, encode_utf8_string,
 };
+use std::fs;
 fn main() {
     let bit_data = vec![0b10101010, 0b11000000]; // 2 bytes of bit data
     let unused_bits = 6; // Last byte has only 2 meaningful bits
@@ -38,6 +40,11 @@ fn main() {
     );
 
     match decode(set_encoded) {
+        Ok(decoded) => println!("Decoded: {:#?}", decoded),
+        Err(e) => eprintln!("Error: {}", e),
+    }
+    let result = fs::read("./fixtures/crl.der").expect("Failed to read clr data");
+    match decode(result) {
         Ok(decoded) => println!("Decoded: {:#?}", decoded),
         Err(e) => eprintln!("Error: {}", e),
     }

@@ -8,6 +8,8 @@ pub enum DecodedValue {
     OctetString(Vec<u8>),
     BitString { unused_bits: u8, data: Vec<u8> },
     ObjectIdentifier(String),
+    Null,
+    GeneralizedTime(String),
     Sequence(Vec<DecodedValue>),
     Set(Vec<DecodedValue>),
     Unknown(u8, Vec<u8>),
@@ -123,6 +125,22 @@ fn decode_object_identifier_value(bytes: &[u8]) -> Option<DecodedValue> {
     Some(DecodedValue::ObjectIdentifier(oid_string))
 }
 
+fn decode_generalized_time_value(bytes: &[u8]) -> Option<DecodedValue> {
+    let s = std::str::from_utf8(bytes).ok()?;
+    if s.len() != 15 || !s.ends_with('Z') {
+        return None;
+    }
+
+    Some(DecodedValue::GeneralizedTime(s.to_string()))
+}
+fn decode_null_value(bytes: &[u8]) -> Option<DecodedValue> {
+    if bytes.is_empty() {
+        Some(DecodedValue::Null)
+    } else {
+        None // NULL must have zero-length content
+    }
+}
+
 fn decode_sequence_value(bytes: &[u8]) -> Option<DecodedValue> {
     let mut elements = vec![];
     let mut cursor = 0;
@@ -169,6 +187,9 @@ fn decode_element(data: &[u8]) -> Option<(DecodedValue, usize)> {
         UTF8STRING_TAG => decode_utf8_string_value(value_bytes),
         BIT_STRING_TAG => decode_bit_string_value(value_bytes),
         OBJECT_IDENTIFIER_TAG => decode_object_identifier_value(value_bytes),
+        GENERALIZED_TIME_TAG => decode_generalized_time_value(value_bytes),
+        NULL_TAG => decode_null_value(value_bytes),
+        CONTEXT_SPECIFIC_0_TAG => decode_sequence_value(value_bytes),
         _ => Some(DecodedValue::Unknown(tag, value_bytes.to_vec())),
     }?;
 

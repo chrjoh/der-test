@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::types::*;
 // Short form: If the length is less than 128, it's encoded as a single byte.
 // Long form: If the length is 128 or more, it's encoded as multiple bytes:
@@ -116,6 +117,22 @@ pub fn encode_object_identifier(oid: &str) -> Option<Vec<u8>> {
     result.extend(encode_length(encoded.len()));
     result.extend(encoded);
     Some(result)
+}
+
+pub fn encode_generalized_time(datetime: &str) -> Option<Vec<u8>> {
+    if !datetime.ends_with('Z') || datetime.len() != 15 {
+        return None; // Must be in "YYYYMMDDHHMMSSZ" format
+    }
+
+    let bytes = datetime.as_bytes();
+    let mut result = vec![GENERALIZED_TIME_TAG];
+    result.extend(encode_length(bytes.len()));
+    result.extend_from_slice(bytes);
+    Some(result)
+}
+
+pub fn encode_null() -> Vec<u8> {
+    vec![NULL_TAG, 0x00]
 }
 
 pub fn encode_sequence(elements: &[Vec<u8>]) -> Vec<u8> {

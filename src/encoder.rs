@@ -80,6 +80,13 @@ pub fn encode_utf8_string(data: String) -> Vec<u8> {
     result.extend(bytes);
     result
 }
+pub fn encode_printable_string(data: String) -> Vec<u8> {
+    let mut result = vec![PRINTABLE_STRING_TAG];
+    let bytes = data.as_bytes();
+    result.extend(encode_length(bytes.len()));
+    result.extend(bytes);
+    result
+}
 // This is base-128 encoding of 113549.
 // 0x86: 10000110 → data bits 0000110 (0x06)→ continuation
 // 0xF7: 11110111 → data bits 01110111 (0x77)→ continuation
@@ -130,7 +137,17 @@ pub fn encode_generalized_time(datetime: &str) -> Option<Vec<u8>> {
     result.extend_from_slice(bytes);
     Some(result)
 }
+pub fn encode_utc_time(datetime: &str) -> Option<Vec<u8>> {
+    if !datetime.ends_with('Z') || datetime.len() != 13 {
+        return None; // Must be in "YYYYMMDDHHMMSSZ" format
+    }
 
+    let bytes = datetime.as_bytes();
+    let mut result = vec![UTC_TIME_TAG];
+    result.extend(encode_length(bytes.len()));
+    result.extend_from_slice(bytes);
+    Some(result)
+}
 pub fn encode_null() -> Vec<u8> {
     vec![NULL_TAG, 0x00]
 }
@@ -140,6 +157,9 @@ pub fn encode_sequence(elements: &[Vec<u8>]) -> Vec<u8> {
 }
 pub fn encode_sequence_0_tag(elements: &[Vec<u8>]) -> Vec<u8> {
     encode_sequence_inner(elements, CONTEXT_SPECIFIC_0_TAG)
+}
+pub fn encode_sequence_3_tag(elements: &[Vec<u8>]) -> Vec<u8> {
+    encode_sequence_inner(elements, CONTEXT_SPECIFIC_3_TAG)
 }
 fn encode_sequence_inner(elements: &[Vec<u8>], tag: u8) -> Vec<u8> {
     let mut content: Vec<u8> = vec![];

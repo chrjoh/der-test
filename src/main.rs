@@ -43,7 +43,7 @@ fn main() {
         Ok(decoded) => println!("Decoded: {:#?}", decoded),
         Err(e) => eprintln!("Error: {}", e),
     }
-    let result = fs::read("./fixtures/crl.der").expect("Failed to read clr data");
+    let result = fs::read("./fixtures/leaf_cert.der").expect("Failed to read der data");
     match decode(result) {
         Ok(decoded) => println!("Decoded: {:#?}", decoded),
         Err(e) => eprintln!("Error: {}", e),

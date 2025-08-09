@@ -7,7 +7,12 @@ pub const SET_TAG: u8 = 0x31;
 pub const BOOLEAN_TAG: u8 = 0x01;
 pub const UTF8STRING_TAG: u8 = 0x0C;
 pub const GENERALIZED_TIME_TAG: u8 = 0x18;
+pub const UTC_TIME_TAG: u8 = 0x17;
 pub const NULL_TAG: u8 = 0x05;
+pub const PRINTABLE_STRING_TAG: u8 = 0x13;
 pub const CONTEXT_SPECIFIC_0_TAG: u8 = 0xA0; // hard coded to be followed by a seq
+pub const CONTEXT_SPECIFIC_3_TAG: u8 = 0xA3; // hard coded to be followed by a seq
 pub const LONG_FORM_DECODE: u8 = 0x7F;
 pub const LONG_FORM: u8 = 0x80;
+
+//PrintableString

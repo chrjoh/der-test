@@ -9,7 +9,9 @@ pub enum DecodedValue {
     BitString { unused_bits: u8, data: Vec<u8> },
     ObjectIdentifier(String),
     Null,
+    PrintableString(String),
     GeneralizedTime(String),
+    UtcTime(String),
     Sequence(Vec<DecodedValue>),
     Set(Vec<DecodedValue>),
     Unknown(u8, Vec<u8>),
@@ -21,6 +23,14 @@ pub enum DecodedValue {
 // 0x7F = binary 01111111
 // first & 0x7F removes the high bit and gives you the number of length bytes.
 // 0x82 & 0x7F = 0x02 → means "length is encoded in 2 bytes"
+//
+//  i.e if the array starts with 30 82 01 F4
+// 0x30 is the tag for a SEQUENCE.
+// 0x82 means the length is in long form, and the next 2 bytes (0x01F4) encode the length.
+// 0x01F4 = 500, so the sequence contains 500 bytes of data after the length field.
+// [82 01 F4]
+// First iteration: length = (0 << 8) | 0x01 = 1
+// Second iteration: length = (1 << 8) | 0xF4 = 256 | 244 = 500
 fn decode_length(data: &[u8]) -> Option<(usize, usize)> {
     if data.is_empty() {
         return None;
@@ -70,7 +80,12 @@ fn decode_utf8_string_value(bytes: &[u8]) -> Option<DecodedValue> {
         Err(_) => None, // Invalid UTF-8
     }
 }
-
+fn decode_printable_string_value(bytes: &[u8]) -> Option<DecodedValue> {
+    match std::str::from_utf8(bytes) {
+        Ok(s) => Some(DecodedValue::PrintableString(s.to_string())),
+        Err(_) => None,
+    }
+}
 fn decode_bit_string_value(bytes: &[u8]) -> Option<DecodedValue> {
     if bytes.is_empty() {
         return None;
@@ -133,6 +148,14 @@ fn decode_generalized_time_value(bytes: &[u8]) -> Option<DecodedValue> {
 
     Some(DecodedValue::GeneralizedTime(s.to_string()))
 }
+fn decode_utc_time_value(bytes: &[u8]) -> Option<DecodedValue> {
+    let s = std::str::from_utf8(bytes).ok()?;
+    if s.len() != 13 || !s.ends_with('Z') {
+        return None;
+    }
+
+    Some(DecodedValue::UtcTime(s.to_string()))
+}
 fn decode_null_value(bytes: &[u8]) -> Option<DecodedValue> {
     if bytes.is_empty() {
         Some(DecodedValue::Null)
@@ -188,8 +211,11 @@ fn decode_element(data: &[u8]) -> Option<(DecodedValue, usize)> {
         BIT_STRING_TAG => decode_bit_string_value(value_bytes),
         OBJECT_IDENTIFIER_TAG => decode_object_identifier_value(value_bytes),
         GENERALIZED_TIME_TAG => decode_generalized_time_value(value_bytes),
+        UTC_TIME_TAG => decode_utc_time_value(value_bytes),
         NULL_TAG => decode_null_value(value_bytes),
+        PRINTABLE_STRING_TAG => decode_printable_string_value(value_bytes),
         CONTEXT_SPECIFIC_0_TAG => decode_sequence_value(value_bytes),
+        CONTEXT_SPECIFIC_3_TAG => decode_sequence_value(value_bytes),
         _ => Some(DecodedValue::Unknown(tag, value_bytes.to_vec())),
     }?;
 

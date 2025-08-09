@@ -56,6 +56,15 @@ pub fn encode_boolean(value: bool) -> Vec<u8> {
     result
 }
 
+pub fn encode_bit_string(bits: &[u8], unused_bits: u8) -> Vec<u8> {
+    let mut result = vec![BIT_STRING_TAG];
+    let mut content = vec![unused_bits];
+    content.extend_from_slice(bits);
+    result.extend(encode_length(content.len()));
+    result.extend(content);
+    result
+}
+
 pub fn encode_octet_string(data: &[u8]) -> Vec<u8> {
     let mut result = vec![OCTET_STRING_TAG];
     result.extend(encode_length(data.len()));
@@ -70,6 +79,42 @@ pub fn encode_utf8_string(data: String) -> Vec<u8> {
     result.extend(bytes);
     result
 }
+
+pub fn encode_object_identifier(oid: &str) -> Option<Vec<u8>> {
+    let parts: Vec<u32> = oid.split('.').filter_map(|s| s.parse().ok()).collect();
+    if parts.len() < 2 {
+        return None; // OID must have at least two components
+    }
+
+    let mut encoded: Vec<u8> = Vec::new();
+    encoded.push((parts[0] * 40 + parts[1]) as u8); // First byte
+
+    for &part in &parts[2..] {
+        let mut stack = Vec::new();
+        let mut value = part;
+
+        // Takes the lowest 7 bits of the value and pushes it to the stack.
+        // This is the last byte of the base-128 encoding (MSB = 0).
+        stack.push((value & 0x7F) as u8);
+        // Shifts the value right by 7 bits to process the next 7-bit chunk.
+        value >>= 7;
+
+        // Continues extracting 7-bit chunks from the value.
+        // Each chunk is pushed with the MSB set to 1 (| 0x80) to indicate continuation.
+        while value > 0 {
+            stack.push(((value & 0x7F) as u8) | 0x80);
+            value >>= 7;
+        }
+        // The stack is reversed because the most significant chunks were added last.
+        encoded.extend(stack.iter().rev());
+    }
+
+    let mut result = vec![OBJECT_IDENTIFIER_TAG];
+    result.extend(encode_length(encoded.len()));
+    result.extend(encoded);
+    Some(result)
+}
+
 pub fn encode_sequence(elements: &[Vec<u8>]) -> Vec<u8> {
     let mut content: Vec<u8> = vec![];
     for el in elements {

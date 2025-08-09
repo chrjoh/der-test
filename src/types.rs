@@ -1,6 +1,8 @@
 pub const INTEGER_TAG: u8 = 0x02;
 pub const OCTET_STRING_TAG: u8 = 0x04;
+pub const BIT_STRING_TAG: u8 = 0x03;
 pub const SEQUENCE_TAG: u8 = 0x30;
+pub const OBJECT_IDENTIFIER_TAG: u8 = 0x06;
 pub const SET_TAG: u8 = 0x31;
 pub const BOOLEAN_TAG: u8 = 0x01;
 pub const UTF8STRING_TAG: u8 = 0x0C;

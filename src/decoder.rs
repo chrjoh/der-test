@@ -6,6 +6,8 @@ pub enum DecodedValue {
     Boolean(bool),
     Utf8String(String),
     OctetString(Vec<u8>),
+    BitString { unused_bits: u8, data: Vec<u8> },
+    ObjectIdentifier(String),
     Sequence(Vec<DecodedValue>),
     Set(Vec<DecodedValue>),
     Unknown(u8, Vec<u8>),
@@ -66,6 +68,51 @@ fn decode_utf8_string_value(bytes: &[u8]) -> Option<DecodedValue> {
         Err(_) => None, // Invalid UTF-8
     }
 }
+
+fn decode_bit_string_value(bytes: &[u8]) -> Option<DecodedValue> {
+    if bytes.is_empty() {
+        return None;
+    }
+
+    let unused_bits = bytes[0];
+    let bit_data = bytes[1..].to_vec();
+    Some(DecodedValue::BitString {
+        unused_bits,
+        data: bit_data,
+    })
+}
+fn decode_object_identifier_value(bytes: &[u8]) -> Option<DecodedValue> {
+    if bytes.is_empty() {
+        return None;
+    }
+
+    let first_byte = bytes[0];
+    let first = (first_byte / 40) as u32;
+    let second = (first_byte % 40) as u32;
+
+    let mut parts = vec![first, second];
+    let mut value: u32 = 0;
+
+    for &byte in &bytes[1..] {
+        value = (value << 7) | (byte & 0x7F) as u32;
+        if byte & 0x80 == 0 {
+            parts.push(value);
+            value = 0;
+        }
+    }
+
+    if value != 0 {
+        return None; // Incomplete encoding
+    }
+
+    let oid_string = parts
+        .iter()
+        .map(|n| n.to_string())
+        .collect::<Vec<_>>()
+        .join(".");
+    Some(DecodedValue::ObjectIdentifier(oid_string))
+}
+
 fn decode_sequence_value(bytes: &[u8]) -> Option<DecodedValue> {
     let mut elements = vec![];
     let mut cursor = 0;
@@ -110,6 +157,8 @@ fn decode_element(data: &[u8]) -> Option<(DecodedValue, usize)> {
         SET_TAG => decode_set_value(value_bytes),
         BOOLEAN_TAG => decode_boolean_value(value_bytes),
         UTF8STRING_TAG => decode_utf8_string_value(value_bytes),
+        BIT_STRING_TAG => decode_bit_string_value(value_bytes),
+        OBJECT_IDENTIFIER_TAG => decode_object_identifier_value(value_bytes),
         _ => Some(DecodedValue::Unknown(tag, value_bytes.to_vec())),
     }?;
 

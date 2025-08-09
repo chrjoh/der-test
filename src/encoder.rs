@@ -136,12 +136,18 @@ pub fn encode_null() -> Vec<u8> {
 }
 
 pub fn encode_sequence(elements: &[Vec<u8>]) -> Vec<u8> {
+    encode_sequence_inner(elements, SEQUENCE_TAG)
+}
+pub fn encode_sequence_0_tag(elements: &[Vec<u8>]) -> Vec<u8> {
+    encode_sequence_inner(elements, CONTEXT_SPECIFIC_0_TAG)
+}
+fn encode_sequence_inner(elements: &[Vec<u8>], tag: u8) -> Vec<u8> {
     let mut content: Vec<u8> = vec![];
     for el in elements {
         content.extend(el);
     }
 
-    let mut result = vec![SEQUENCE_TAG];
+    let mut result = vec![tag];
     result.extend(encode_length(content.len()));
     result.extend(content);
     result

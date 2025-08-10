@@ -27,20 +27,17 @@ fn encode_length(length: usize) -> Vec<u8> {
 }
 
 pub fn encode_integer(value: i64) -> Vec<u8> {
-    let mut bytes = vec![];
-    let mut temp = value;
-    while temp != 0 {
-        bytes.insert(0, (temp & 0xFF) as u8);
-        temp >>= 8;
-    }
-    if bytes.is_empty() {
-        bytes.push(0);
-    }
-    if bytes[0] & 0x80 != 0 {
-        bytes.insert(0, 0x00); // Ensure positive integer
+    let mut bytes = value.to_be_bytes().to_vec();
+
+    // Remove leading 0x00 or 0xFF bytes that are not needed
+    while bytes.len() > 1
+        && ((bytes[0] == 0x00 && bytes[1] & 0x80 == 0)
+            || (bytes[0] == 0xFF && bytes[1] & 0x80 != 0))
+    {
+        bytes.remove(0);
     }
 
-    let mut result: Vec<u8> = vec![INTEGER_TAG];
+    let mut result = vec![INTEGER_TAG];
     result.extend(encode_length(bytes.len()));
     result.extend(bytes);
     result
@@ -174,6 +171,11 @@ pub fn encode_sequence_3_tag(elements: &[Vec<u8>]) -> Vec<u8> {
     encode_sequence_inner(elements, CONTEXT_SPECIFIC_3_TAG)
 }
 fn encode_sequence_inner(elements: &[Vec<u8>], tag: u8) -> Vec<u8> {
+    match tag {
+        SEQUENCE_TAG | CONTEXT_SPECIFIC_0_TAG | CONTEXT_SPECIFIC_3_TAG => {}
+        _ => panic!("Invalid tag for sequence encoding"),
+    }
+
     let mut content: Vec<u8> = vec![];
     for el in elements {
         content.extend(el);
@@ -216,6 +218,16 @@ pub fn create_der_from_decoded_value(value: &DecodedValue) -> Option<Vec<u8>> {
             let encoded_elements: Option<Vec<Vec<u8>>> =
                 elements.iter().map(create_der_from_decoded_value).collect();
             encoded_elements.map(|els| encode_sequence(&els))
+        }
+        DecodedValue::ContextSequence0(elements) => {
+            let encoded_elements: Option<Vec<Vec<u8>>> =
+                elements.iter().map(create_der_from_decoded_value).collect();
+            encoded_elements.map(|els| encode_sequence_0_tag(&els))
+        }
+        DecodedValue::ContextSequence3(elements) => {
+            let encoded_elements: Option<Vec<Vec<u8>>> =
+                elements.iter().map(create_der_from_decoded_value).collect();
+            encoded_elements.map(|els| encode_sequence_3_tag(&els))
         }
         DecodedValue::Set(elements) => {
             let encoded_elements: Option<Vec<Vec<u8>>> =

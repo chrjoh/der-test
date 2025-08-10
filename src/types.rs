@@ -28,6 +28,8 @@ pub enum DecodedValue {
     GeneralizedTime(String),
     UtcTime(String),
     Sequence(Vec<DecodedValue>),
+    ContextSequence0(Vec<DecodedValue>),
+    ContextSequence3(Vec<DecodedValue>),
     Set(Vec<DecodedValue>),
     Unknown(u8, Vec<u8>),
 }

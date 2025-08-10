@@ -38,7 +38,6 @@ fn decode_length(data: &[u8]) -> Option<(usize, usize)> {
         Some((length, 1 + num_bytes))
     }
 }
-
 fn decode_integer_value(bytes: &[u8]) -> Option<DecodedValue> {
     let mut value: i64 = 0;
     for &b in bytes {
@@ -167,7 +166,10 @@ fn decode_null_value(bytes: &[u8]) -> Option<DecodedValue> {
     }
 }
 
-fn decode_sequence_value(bytes: &[u8]) -> Option<DecodedValue> {
+fn decode_sequence_with_variant<F>(bytes: &[u8], wrap: F) -> Option<DecodedValue>
+where
+    F: Fn(Vec<DecodedValue>) -> DecodedValue,
+{
     let mut elements = vec![];
     let mut cursor = 0;
     while cursor < bytes.len() {
@@ -175,7 +177,7 @@ fn decode_sequence_value(bytes: &[u8]) -> Option<DecodedValue> {
         elements.push(element);
         cursor += consumed;
     }
-    Some(DecodedValue::Sequence(elements))
+    Some(wrap(elements))
 }
 
 fn decode_set_value(bytes: &[u8]) -> Option<DecodedValue> {
@@ -207,7 +209,13 @@ fn decode_element(data: &[u8]) -> Option<(DecodedValue, usize)> {
     let decoded = match tag {
         INTEGER_TAG => decode_integer_value(value_bytes),
         OCTET_STRING_TAG => decode_octet_string_value(value_bytes),
-        SEQUENCE_TAG => decode_sequence_value(value_bytes),
+        CONTEXT_SPECIFIC_0_TAG => {
+            decode_sequence_with_variant(value_bytes, DecodedValue::ContextSequence0)
+        }
+        CONTEXT_SPECIFIC_3_TAG => {
+            decode_sequence_with_variant(value_bytes, DecodedValue::ContextSequence3)
+        }
+        SEQUENCE_TAG => decode_sequence_with_variant(value_bytes, DecodedValue::Sequence),
         SET_TAG => decode_set_value(value_bytes),
         BOOLEAN_TAG => decode_boolean_value(value_bytes),
         UTF8STRING_TAG => decode_utf8_string_value(value_bytes),
@@ -217,8 +225,6 @@ fn decode_element(data: &[u8]) -> Option<(DecodedValue, usize)> {
         UTC_TIME_TAG => decode_utc_time_value(value_bytes),
         NULL_TAG => decode_null_value(value_bytes),
         PRINTABLE_STRING_TAG => decode_printable_string_value(value_bytes),
-        CONTEXT_SPECIFIC_0_TAG => decode_sequence_value(value_bytes),
-        CONTEXT_SPECIFIC_3_TAG => decode_sequence_value(value_bytes),
         _ => Some(DecodedValue::Unknown(tag, value_bytes.to_vec())),
     }?;
 
@@ -270,6 +276,20 @@ pub fn print_decoded_value(value: &DecodedValue, indent: usize) {
 
         DecodedValue::Sequence(seq) => {
             println!("{indent_str}Sequence [");
+            for item in seq {
+                print_decoded_value(item, indent + 4);
+            }
+            println!("{indent_str}]");
+        }
+        DecodedValue::ContextSequence0(seq) => {
+            println!("{indent_str}Sequence0 [");
+            for item in seq {
+                print_decoded_value(item, indent + 4);
+            }
+            println!("{indent_str}]");
+        }
+        DecodedValue::ContextSequence3(seq) => {
+            println!("{indent_str}Sequence3 [");
             for item in seq {
                 print_decoded_value(item, indent + 4);
             }

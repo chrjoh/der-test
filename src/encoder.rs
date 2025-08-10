@@ -37,14 +37,14 @@ pub fn encode_integer(value: i64) -> Vec<u8> {
         bytes.remove(0);
     }
 
-    let mut result = vec![INTEGER_TAG];
+    let mut result: Vec<u8> = vec![Tag::Integer.into()];
     result.extend(encode_length(bytes.len()));
     result.extend(bytes);
     result
 }
 
 pub fn encode_boolean(value: bool) -> Vec<u8> {
-    let mut result: Vec<u8> = vec![BOOLEAN_TAG];
+    let mut result: Vec<u8> = vec![Tag::Boolean.into()];
     result.push(0x01);
     if value {
         result.push(0xFF);
@@ -55,7 +55,7 @@ pub fn encode_boolean(value: bool) -> Vec<u8> {
 }
 
 pub fn encode_bit_string(bits: &[u8], unused_bits: u8) -> Vec<u8> {
-    let mut result = vec![BIT_STRING_TAG];
+    let mut result = vec![Tag::BitString.into()];
     let mut content = vec![unused_bits];
     content.extend_from_slice(bits);
     result.extend(encode_length(content.len()));
@@ -64,21 +64,21 @@ pub fn encode_bit_string(bits: &[u8], unused_bits: u8) -> Vec<u8> {
 }
 
 pub fn encode_octet_string(data: &[u8]) -> Vec<u8> {
-    let mut result = vec![OCTET_STRING_TAG];
+    let mut result = vec![Tag::OctetString.into()];
     result.extend(encode_length(data.len()));
     result.extend(data);
     result
 }
 
 pub fn encode_utf8_string(data: String) -> Vec<u8> {
-    let mut result = vec![UTF8STRING_TAG];
+    let mut result = vec![Tag::Utf8String.into()];
     let bytes = data.as_bytes();
     result.extend(encode_length(bytes.len()));
     result.extend(bytes);
     result
 }
 pub fn encode_printable_string(data: String) -> Vec<u8> {
-    let mut result = vec![PRINTABLE_STRING_TAG];
+    let mut result = vec![Tag::PrintableString.into()];
     let bytes = data.as_bytes();
     result.extend(encode_length(bytes.len()));
     result.extend(bytes);
@@ -129,7 +129,7 @@ pub fn encode_object_identifier(oid: &str) -> Option<Vec<u8>> {
         encoded.extend(stack.iter().rev());
     }
 
-    let mut result = vec![OBJECT_IDENTIFIER_TAG];
+    let mut result = vec![Tag::ObjectIdentifier.into()];
     result.extend(encode_length(encoded.len()));
     result.extend(encoded);
     Some(result)
@@ -141,7 +141,7 @@ pub fn encode_generalized_time(datetime: &str) -> Option<Vec<u8>> {
     }
 
     let bytes = datetime.as_bytes();
-    let mut result = vec![GENERALIZED_TIME_TAG];
+    let mut result = vec![Tag::GeneralizedTime.into()];
     result.extend(encode_length(bytes.len()));
     result.extend_from_slice(bytes);
     Some(result)
@@ -152,27 +152,27 @@ pub fn encode_utc_time(datetime: &str) -> Option<Vec<u8>> {
     }
 
     let bytes = datetime.as_bytes();
-    let mut result = vec![UTC_TIME_TAG];
+    let mut result = vec![Tag::UtcTime.into()];
     result.extend(encode_length(bytes.len()));
     result.extend_from_slice(bytes);
     Some(result)
 }
 pub fn encode_null() -> Vec<u8> {
-    vec![NULL_TAG, 0x00]
+    vec![Tag::Null.into(), 0x00]
 }
 
 pub fn encode_sequence(elements: &[Vec<u8>]) -> Vec<u8> {
-    encode_sequence_inner(elements, SEQUENCE_TAG)
+    encode_sequence_inner(elements, Tag::Sequence.into())
 }
 pub fn encode_sequence_0_tag(elements: &[Vec<u8>]) -> Vec<u8> {
-    encode_sequence_inner(elements, CONTEXT_SPECIFIC_0_TAG)
+    encode_sequence_inner(elements, Tag::ContextSpecific0.into())
 }
 pub fn encode_sequence_3_tag(elements: &[Vec<u8>]) -> Vec<u8> {
-    encode_sequence_inner(elements, CONTEXT_SPECIFIC_3_TAG)
+    encode_sequence_inner(elements, Tag::ContextSpecific3.into())
 }
-fn encode_sequence_inner(elements: &[Vec<u8>], tag: u8) -> Vec<u8> {
+fn encode_sequence_inner(elements: &[Vec<u8>], tag: Tag) -> Vec<u8> {
     match tag {
-        SEQUENCE_TAG | CONTEXT_SPECIFIC_0_TAG | CONTEXT_SPECIFIC_3_TAG => {}
+        Tag::Sequence | Tag::ContextSpecific0 | Tag::ContextSpecific3 => {}
         _ => panic!("Invalid tag for sequence encoding"),
     }
 
@@ -181,7 +181,7 @@ fn encode_sequence_inner(elements: &[Vec<u8>], tag: u8) -> Vec<u8> {
         content.extend(el);
     }
 
-    let mut result = vec![tag];
+    let mut result = vec![tag.into()];
     result.extend(encode_length(content.len()));
     result.extend(content);
     result
@@ -195,7 +195,7 @@ pub fn encode_set(elements: &[Vec<u8>]) -> Vec<u8> {
     for el in sorted_elements {
         content.extend(el);
     }
-    let mut result = vec![SET_TAG];
+    let mut result = vec![Tag::Set.into()];
     result.extend(encode_length(content.len()));
     result.extend(content);
     result
@@ -259,22 +259,25 @@ mod tests {
 
     #[test]
     fn test_encode_integer_positive() {
-        assert_eq!(encode_integer(300), vec![INTEGER_TAG, 0x02, 0x01, 0x2C]);
+        assert_eq!(
+            encode_integer(300),
+            vec![Tag::Integer.into(), 0x02, 0x01, 0x2C]
+        );
     }
 
     #[test]
     fn test_encode_integer_zero() {
-        assert_eq!(encode_integer(0), vec![INTEGER_TAG, 0x01, 0x00]);
+        assert_eq!(encode_integer(0), vec![Tag::Integer.into(), 0x01, 0x00]);
     }
 
     #[test]
     fn test_encode_boolean_true() {
-        assert_eq!(encode_boolean(true), vec![BOOLEAN_TAG, 0x01, 0xFF]);
+        assert_eq!(encode_boolean(true), vec![Tag::Boolean.into(), 0x01, 0xFF]);
     }
 
     #[test]
     fn test_encode_boolean_false() {
-        assert_eq!(encode_boolean(false), vec![BOOLEAN_TAG, 0x01, 0x00]);
+        assert_eq!(encode_boolean(false), vec![Tag::Boolean.into(), 0x01, 0x00]);
     }
 
     #[test]
@@ -282,7 +285,7 @@ mod tests {
         let bits = vec![0b10101010];
         assert_eq!(
             encode_bit_string(&bits, 3),
-            vec![BIT_STRING_TAG, 0x02, 0x03, 0b10101010]
+            vec![Tag::BitString.into(), 0x02, 0x03, 0b10101010]
         );
     }
 
@@ -291,7 +294,7 @@ mod tests {
         let data = vec![0xDE, 0xAD, 0xBE, 0xEF];
         assert_eq!(
             encode_octet_string(&data),
-            vec![OCTET_STRING_TAG, 0x04, 0xDE, 0xAD, 0xBE, 0xEF]
+            vec![Tag::OctetString.into(), 0x04, 0xDE, 0xAD, 0xBE, 0xEF]
         );
     }
 
@@ -300,7 +303,7 @@ mod tests {
         let s = "hello".to_string();
         assert_eq!(
             encode_utf8_string(s),
-            vec![UTF8STRING_TAG, 0x05, b'h', b'e', b'l', b'l', b'o']
+            vec![Tag::Utf8String.into(), 0x05, b'h', b'e', b'l', b'l', b'o']
         );
     }
 
@@ -309,7 +312,15 @@ mod tests {
         let s = "world".to_string();
         assert_eq!(
             encode_printable_string(s),
-            vec![PRINTABLE_STRING_TAG, 0x05, b'w', b'o', b'r', b'l', b'd']
+            vec![
+                Tag::PrintableString.into(),
+                0x05,
+                b'w',
+                b'o',
+                b'r',
+                b'l',
+                b'd'
+            ]
         );
     }
 
@@ -319,7 +330,7 @@ mod tests {
         assert_eq!(
             encode_object_identifier(oid),
             Some(vec![
-                OBJECT_IDENTIFIER_TAG,
+                Tag::ObjectIdentifier.into(),
                 0x06,
                 0x2A,
                 0x86,
@@ -336,7 +347,7 @@ mod tests {
         assert_eq!(
             encode_object_identifier(oid),
             Some(vec![
-                OBJECT_IDENTIFIER_TAG,
+                Tag::ObjectIdentifier.into(),
                 0x07,
                 0x82,
                 0x18,
@@ -359,7 +370,7 @@ mod tests {
         assert_eq!(
             encode_generalized_time(dt),
             Some(vec![
-                GENERALIZED_TIME_TAG,
+                Tag::GeneralizedTime.into(),
                 0x0F,
                 b'2',
                 b'0',
@@ -391,7 +402,7 @@ mod tests {
         assert_eq!(
             encode_utc_time(dt),
             Some(vec![
-                UTC_TIME_TAG,
+                Tag::UtcTime.into(),
                 0x0D,
                 b'2',
                 b'5',
@@ -417,7 +428,7 @@ mod tests {
 
     #[test]
     fn test_encode_null() {
-        assert_eq!(encode_null(), vec![NULL_TAG, 0x00]);
+        assert_eq!(encode_null(), vec![Tag::Null.into(), 0x00]);
     }
 
     #[test]
@@ -425,7 +436,7 @@ mod tests {
         let el1 = encode_integer(1);
         let el2 = encode_boolean(true);
         let seq = encode_sequence(&[el1.clone(), el2.clone()]);
-        assert_eq!(seq[0], SEQUENCE_TAG);
+        assert_eq!(seq[0], Tag::Sequence.into());
         assert!(seq.ends_with(&[0x01, 0xFF]));
     }
 
@@ -434,7 +445,7 @@ mod tests {
         let el1 = encode_integer(2);
         let el2 = encode_integer(1);
         let set = encode_set(&[el1, el2]);
-        assert_eq!(set[0], SET_TAG);
+        assert_eq!(set[0], Tag::Set.into());
     }
 
     #[test]

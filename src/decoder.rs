@@ -196,7 +196,7 @@ fn decode_element(data: &[u8]) -> Option<(DecodedValue, usize)> {
         return None;
     }
 
-    let tag = data[0];
+    let tag_byte = data[0];
     let (length, len_len) = decode_length(&data[1..])?;
     let start = 1 + len_len;
     let end = start + length;
@@ -205,27 +205,28 @@ fn decode_element(data: &[u8]) -> Option<(DecodedValue, usize)> {
     }
 
     let value_bytes = &data[start..end];
+    let tag = Tag::try_from(tag_byte);
 
     let decoded = match tag {
-        INTEGER_TAG => decode_integer_value(value_bytes),
-        OCTET_STRING_TAG => decode_octet_string_value(value_bytes),
-        CONTEXT_SPECIFIC_0_TAG => {
+        Ok(Tag::Integer) => decode_integer_value(value_bytes),
+        Ok(Tag::OctetString) => decode_octet_string_value(value_bytes),
+        Ok(Tag::ContextSpecific0) => {
             decode_sequence_with_variant(value_bytes, DecodedValue::ContextSequence0)
         }
-        CONTEXT_SPECIFIC_3_TAG => {
+        Ok(Tag::ContextSpecific3) => {
             decode_sequence_with_variant(value_bytes, DecodedValue::ContextSequence3)
         }
-        SEQUENCE_TAG => decode_sequence_with_variant(value_bytes, DecodedValue::Sequence),
-        SET_TAG => decode_set_value(value_bytes),
-        BOOLEAN_TAG => decode_boolean_value(value_bytes),
-        UTF8STRING_TAG => decode_utf8_string_value(value_bytes),
-        BIT_STRING_TAG => decode_bit_string_value(value_bytes),
-        OBJECT_IDENTIFIER_TAG => decode_object_identifier_value(value_bytes),
-        GENERALIZED_TIME_TAG => decode_generalized_time_value(value_bytes),
-        UTC_TIME_TAG => decode_utc_time_value(value_bytes),
-        NULL_TAG => decode_null_value(value_bytes),
-        PRINTABLE_STRING_TAG => decode_printable_string_value(value_bytes),
-        _ => Some(DecodedValue::Unknown(tag, value_bytes.to_vec())),
+        Ok(Tag::Sequence) => decode_sequence_with_variant(value_bytes, DecodedValue::Sequence),
+        Ok(Tag::Set) => decode_set_value(value_bytes),
+        Ok(Tag::Boolean) => decode_boolean_value(value_bytes),
+        Ok(Tag::Utf8String) => decode_utf8_string_value(value_bytes),
+        Ok(Tag::BitString) => decode_bit_string_value(value_bytes),
+        Ok(Tag::ObjectIdentifier) => decode_object_identifier_value(value_bytes),
+        Ok(Tag::GeneralizedTime) => decode_generalized_time_value(value_bytes),
+        Ok(Tag::UtcTime) => decode_utc_time_value(value_bytes),
+        Ok(Tag::Null) => decode_null_value(value_bytes),
+        Ok(Tag::PrintableString) => decode_printable_string_value(value_bytes),
+        _ => Some(DecodedValue::Unknown(tag_byte, value_bytes.to_vec())),
     }?;
 
     Some((decoded, end))
@@ -335,28 +336,28 @@ mod tests {
 
     #[test]
     fn test_decode_integer_value() {
-        let encoded = vec![INTEGER_TAG, 0x02, 0x01, 0x2C];
+        let encoded = vec![Tag::Integer.into(), 0x02, 0x01, 0x2C];
         let decoded = decode(encoded).unwrap();
         assert_eq!(decoded, DecodedValue::Integer(300));
     }
 
     #[test]
     fn test_decode_boolean_true() {
-        let encoded = vec![BOOLEAN_TAG, 0x01, 0xFF];
+        let encoded = vec![Tag::Boolean.into(), 0x01, 0xFF];
         let decoded = decode(encoded).unwrap();
         assert_eq!(decoded, DecodedValue::Boolean(true));
     }
 
     #[test]
     fn test_decode_boolean_false() {
-        let encoded = vec![BOOLEAN_TAG, 0x01, 0x00];
+        let encoded = vec![Tag::Boolean.into(), 0x01, 0x00];
         let decoded = decode(encoded).unwrap();
         assert_eq!(decoded, DecodedValue::Boolean(false));
     }
 
     #[test]
     fn test_decode_octet_string() {
-        let encoded = vec![OCTET_STRING_TAG, 0x04, 0xDE, 0xAD, 0xBE, 0xEF];
+        let encoded = vec![Tag::OctetString.into(), 0x04, 0xDE, 0xAD, 0xBE, 0xEF];
         let decoded = decode(encoded).unwrap();
         assert_eq!(
             decoded,
@@ -366,21 +367,29 @@ mod tests {
 
     #[test]
     fn test_decode_utf8_string() {
-        let encoded = vec![UTF8STRING_TAG, 0x05, b'h', b'e', b'l', b'l', b'o'];
+        let encoded = vec![Tag::Utf8String.into(), 0x05, b'h', b'e', b'l', b'l', b'o'];
         let decoded = decode(encoded).unwrap();
         assert_eq!(decoded, DecodedValue::Utf8String("hello".to_string()));
     }
 
     #[test]
     fn test_decode_printable_string() {
-        let encoded = vec![PRINTABLE_STRING_TAG, 0x05, b'w', b'o', b'r', b'l', b'd'];
+        let encoded = vec![
+            Tag::PrintableString.into(),
+            0x05,
+            b'w',
+            b'o',
+            b'r',
+            b'l',
+            b'd',
+        ];
         let decoded = decode(encoded).unwrap();
         assert_eq!(decoded, DecodedValue::PrintableString("world".to_string()));
     }
 
     #[test]
     fn test_decode_bit_string() {
-        let encoded = vec![BIT_STRING_TAG, 0x02, 0x03, 0b10101010];
+        let encoded = vec![Tag::BitString.into(), 0x02, 0x03, 0b10101010];
         let decoded = decode(encoded).unwrap();
         assert_eq!(
             decoded,
@@ -394,7 +403,7 @@ mod tests {
     #[test]
     fn test_decode_object_identifier() {
         let encoded = vec![
-            OBJECT_IDENTIFIER_TAG,
+            Tag::ObjectIdentifier.into(),
             0x06,
             0x2A,
             0x86,
@@ -413,7 +422,7 @@ mod tests {
     #[test]
     fn test_decode_big_object_identifier() {
         let encoded = vec![
-            OBJECT_IDENTIFIER_TAG,
+            Tag::ObjectIdentifier.into(),
             0x07,
             0x82,
             0x18,
@@ -432,7 +441,7 @@ mod tests {
     #[test]
     fn test_decode_generalized_time() {
         let encoded = vec![
-            GENERALIZED_TIME_TAG,
+            Tag::GeneralizedTime.into(),
             0x0F,
             b'2',
             b'0',
@@ -460,7 +469,7 @@ mod tests {
     #[test]
     fn test_decode_utc_time() {
         let encoded = vec![
-            UTC_TIME_TAG,
+            Tag::UtcTime.into(),
             0x0D,
             b'2',
             b'5',
@@ -482,17 +491,17 @@ mod tests {
 
     #[test]
     fn test_decode_null() {
-        let encoded = vec![NULL_TAG, 0x00];
+        let encoded = vec![Tag::Null.into(), 0x00];
         let decoded = decode(encoded).unwrap();
         assert_eq!(decoded, DecodedValue::Null);
     }
 
     #[test]
     fn test_decode_sequence() {
-        let el1 = vec![INTEGER_TAG, 0x01, 0x01];
-        let el2 = vec![BOOLEAN_TAG, 0x01, 0xFF];
+        let el1 = vec![Tag::Integer.into(), 0x01, 0x01];
+        let el2 = vec![Tag::Boolean.into(), 0x01, 0xFF];
         let content = [el1.clone(), el2.clone()].concat();
-        let encoded = vec![SEQUENCE_TAG, content.len() as u8];
+        let encoded = vec![Tag::Sequence.into(), content.len() as u8];
         let mut full = encoded.clone();
         full.extend(content);
         let decoded = decode(full).unwrap();
@@ -504,10 +513,10 @@ mod tests {
 
     #[test]
     fn test_decode_set() {
-        let el1 = vec![INTEGER_TAG, 0x01, 0x02];
-        let el2 = vec![INTEGER_TAG, 0x01, 0x01];
+        let el1 = vec![Tag::Integer.into(), 0x01, 0x02];
+        let el2 = vec![Tag::Integer.into(), 0x01, 0x01];
         let content = [el1.clone(), el2.clone()].concat();
-        let encoded = vec![SET_TAG, content.len() as u8];
+        let encoded = vec![Tag::Set.into(), content.len() as u8];
         let mut full = encoded.clone();
         full.extend(content);
         let decoded = decode(full).unwrap();

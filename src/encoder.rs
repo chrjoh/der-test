@@ -95,9 +95,6 @@ pub fn encode_printable_string(data: String) -> Vec<u8> {
 //
 // encode 1.2 ->
 // 1 * 40 + 2 = 42 → 0x2A
-// decode
-// first = 42 / 40 = 1
-// second = 42 % 40 = 2
 //
 // 0x86: 10000110 → data bits 0000110 (0x06)→ continuation
 // 0xF7: 11110111 → data bits 01110111 (0x77)→ continuation

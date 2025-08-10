@@ -100,6 +100,12 @@ fn decode_bit_string_value(bytes: &[u8]) -> Option<DecodedValue> {
 }
 // 128 decoding of first byte is need to handle 2.200
 // to handle 2.200 for example 128 encoding is needed
+// first_byte=40×first+second
+// This is because the first component is limited to values 0, 1, or 2, and the second component can vary.
+// If value < 40: ->  0 * 40 + value = value
+// If value < 80: -> 1 * 40 + (value - 40) = value
+// else -> 2 * 40 + (value - 80) = value
+//
 // value to get: 113549
 // Start with value = 0
 // value = (0 << 7) | 0x06 = 6
@@ -117,12 +123,13 @@ pub fn decode_object_identifier_value(bytes: &[u8]) -> Option<DecodedValue> {
 
     let mut parts = Vec::new();
     let mut value: u32 = 0;
-    let mut first = true;
+    let mut is_initial_oid_part = true;
 
     for &byte in bytes {
         value = (value << 7) | (byte & 0x7F) as u32;
         if byte & 0x80 == 0 {
-            if first {
+            // this indicate the end of the first 128-bit encoded value and give
+            if is_initial_oid_part {
                 // Decode first two components from combined value
                 let (f, s) = match value {
                     v if v < 40 => (0, v),
@@ -131,7 +138,7 @@ pub fn decode_object_identifier_value(bytes: &[u8]) -> Option<DecodedValue> {
                 };
                 parts.push(f);
                 parts.push(s);
-                first = false;
+                is_initial_oid_part = false;
             } else {
                 parts.push(value);
             }

@@ -16,7 +16,7 @@ fn encode_length(length: usize) -> Vec<u8> {
         let mut len_bytes = vec![];
         let mut temp = length;
         while temp > 0 {
-            len_bytes.insert(0, (temp & 0xFF) as u8);
+            len_bytes.insert(0, (temp & 0xFF) as u8); // temp & 0xFF extracts the lowest byte.
             temp >>= 8;
         }
         let len_indicator = LONG_FORM | (len_bytes.len() as u8);
@@ -88,35 +88,50 @@ pub fn encode_printable_string(data: String) -> Vec<u8> {
     result
 }
 // This is base-128 encoding of 113549.
+// The first byte encodes:
+// The first component (parts[0]) is always 0, 1, or 2.
+// The second component (parts[1]) must be less than 40 if the first is 0 or 1,
+// but can be larger if the first is 2.
+//
+// encode 1.2 ->
+// 1 * 40 + 2 = 42 → 0x2A
+// decode
+// first = 42 / 40 = 1
+// second = 42 % 40 = 2
+//
 // 0x86: 10000110 → data bits 0000110 (0x06)→ continuation
 // 0xF7: 11110111 → data bits 01110111 (0x77)→ continuation
 // 0x0D: 00001101 → data bits 00001101 (0x0D)→ last byte
 pub fn encode_object_identifier(oid: &str) -> Option<Vec<u8>> {
     let parts: Vec<u32> = oid.split('.').filter_map(|s| s.parse().ok()).collect();
     if parts.len() < 2 {
-        return None; // OID must have at least two components
+        return None;
     }
 
     let mut encoded: Vec<u8> = Vec::new();
-    encoded.push((parts[0] * 40 + parts[1]) as u8); // First byte
 
+    // Encode first two components as a single base-128 value
+    let first_value = parts[0] * 40 + parts[1];
+    let mut stack = Vec::new();
+    let mut value = first_value;
+    stack.push((value & 0x7F) as u8);
+    value >>= 7;
+    while value > 0 {
+        stack.push(((value & 0x7F) as u8) | 0x80);
+        value >>= 7;
+    }
+    encoded.extend(stack.iter().rev());
+
+    // Encode remaining components
     for &part in &parts[2..] {
         let mut stack = Vec::new();
         let mut value = part;
-
-        // Takes the lowest 7 bits of the value and pushes it to the stack.
-        // This is the last byte of the base-128 encoding (MSB = 0).
         stack.push((value & 0x7F) as u8);
-        // Shifts the value right by 7 bits to process the next 7-bit chunk.
         value >>= 7;
-
-        // Continues extracting 7-bit chunks from the value.
-        // Each chunk is pushed with the MSB set to 1 (| 0x80) to indicate continuation.
         while value > 0 {
             stack.push(((value & 0x7F) as u8) | 0x80);
             value >>= 7;
         }
-        // The stack is reversed because the most significant chunks were added last.
         encoded.extend(stack.iter().rev());
     }
 
@@ -274,7 +289,24 @@ mod tests {
             ])
         );
     }
-
+    #[test]
+    fn test_encode_big_object_identifier_valid() {
+        let oid = "2.200.840.113549";
+        assert_eq!(
+            encode_object_identifier(oid),
+            Some(vec![
+                OBJECT_IDENTIFIER_TAG,
+                0x07,
+                0x82,
+                0x18,
+                0x86,
+                0x48,
+                0x86,
+                0xF7,
+                0x0D,
+            ])
+        );
+    }
     #[test]
     fn test_encode_object_identifier_invalid() {
         assert_eq!(encode_object_identifier("1"), None);

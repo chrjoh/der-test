@@ -82,7 +82,7 @@ fn run_test_data() {
     let seq_encoded1 = encode_sequence(&[int_encoded, str_encoded]);
     let seq_encoded2 = encode_sequence(&[encode_boolean(true), encode_octet_string(b"world")]);
 
-    let oid = "1.2.840.113549";
+    let oid = "2.200.840.113549";
     let oid_encoded = encode_object_identifier(oid).unwrap();
 
     let set_encoded = encode_set(&[

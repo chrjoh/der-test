@@ -26,7 +26,7 @@ pub enum DecodedValue {
 //
 //  i.e if the array starts with 30 82 01 F4
 // 0x30 is the tag for a SEQUENCE.
-// 0x82 means the length is in long form, and the next 2 bytes (0x01F4) encode the length.
+// 0x82 means the length is in long form, and the next 2 bytes (0x01 0xF4) encode the length.
 // 0x01F4 = 500, so the sequence contains 500 bytes of data after the length field.
 // [82 01 F4]
 // First iteration: length = (0 << 8) | 0x01 = 1
@@ -98,6 +98,8 @@ fn decode_bit_string_value(bytes: &[u8]) -> Option<DecodedValue> {
         data: bit_data,
     })
 }
+// 128 decoding of first byte is need to handle 2.200
+// to handle 2.200 for example 128 encoding is needed
 // value to get: 113549
 // Start with value = 0
 // value = (0 << 7) | 0x06 = 6
@@ -108,22 +110,31 @@ fn decode_bit_string_value(bytes: &[u8]) -> Option<DecodedValue> {
 // Shift left by 7 bits:(This means we add 7 zeros to the right)
 // 00000110 << 7 = 0011000000000
 //
-fn decode_object_identifier_value(bytes: &[u8]) -> Option<DecodedValue> {
+pub fn decode_object_identifier_value(bytes: &[u8]) -> Option<DecodedValue> {
     if bytes.is_empty() {
         return None;
     }
 
-    let first_byte = bytes[0];
-    let first = (first_byte / 40) as u32;
-    let second = (first_byte % 40) as u32;
-
-    let mut parts = vec![first, second];
+    let mut parts = Vec::new();
     let mut value: u32 = 0;
+    let mut first = true;
 
-    for &byte in &bytes[1..] {
+    for &byte in bytes {
         value = (value << 7) | (byte & 0x7F) as u32;
         if byte & 0x80 == 0 {
-            parts.push(value);
+            if first {
+                // Decode first two components from combined value
+                let (f, s) = match value {
+                    v if v < 40 => (0, v),
+                    v if v < 80 => (1, v - 40),
+                    v => (2, v - 80),
+                };
+                parts.push(f);
+                parts.push(s);
+                first = false;
+            } else {
+                parts.push(value);
+            }
             value = 0;
         }
     }
@@ -387,6 +398,25 @@ mod tests {
         );
     }
 
+    #[test]
+    fn test_decode_big_object_identifier() {
+        let encoded = vec![
+            OBJECT_IDENTIFIER_TAG,
+            0x07,
+            0x82,
+            0x18,
+            0x86,
+            0x48,
+            0x86,
+            0xF7,
+            0x0D,
+        ];
+        let decoded = decode(encoded).unwrap();
+        assert_eq!(
+            decoded,
+            DecodedValue::ObjectIdentifier("2.200.840.113549".to_string())
+        );
+    }
     #[test]
     fn test_decode_generalized_time() {
         let encoded = vec![

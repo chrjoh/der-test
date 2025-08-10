@@ -62,7 +62,13 @@ fn run_test_file<P: AsRef<Path>>(file: P) {
 fn run_test_data_crl() {
     let result = fs::read("./fixtures/crl.der").expect("Failed to read der data");
     match decode(result) {
-        Ok(decoded) => print_decoded_value(&decoded, 1),
+        Ok(decoded) => {
+            print_decoded_value(&decoded, 1);
+            match create_der_from_decoded_value(&decoded) {
+                Some(encoded) => println!("{}", der_to_pem(&encoded, "CRL")),
+                None => eprintln!("Error: re encoding"),
+            }
+        }
         Err(e) => eprintln!("Error: {}", e),
     }
 }

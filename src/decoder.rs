@@ -1,21 +1,6 @@
 #![allow(dead_code)]
 use crate::types::*;
-#[derive(Debug, PartialEq)]
-pub enum DecodedValue {
-    Integer(i64),
-    Boolean(bool),
-    Utf8String(String),
-    OctetString(Vec<u8>),
-    BitString { unused_bits: u8, data: Vec<u8> },
-    ObjectIdentifier(String),
-    Null,
-    PrintableString(String),
-    GeneralizedTime(String),
-    UtcTime(String),
-    Sequence(Vec<DecodedValue>),
-    Set(Vec<DecodedValue>),
-    Unknown(u8, Vec<u8>),
-}
+
 //encodeing
 // 0x80 = binary 10000000
 // 0x80 | 2 = 0x82 → means "length is encoded in 2 bytes"

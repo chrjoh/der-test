@@ -2,16 +2,17 @@
 mod decoder;
 mod encoder;
 mod types;
-
 use crate::decoder::{decode, print_decoded_value};
 use crate::encoder::{
-    encode_bit_string, encode_boolean, encode_integer, encode_object_identifier,
-    encode_octet_string, encode_sequence, encode_set, encode_utf8_string,
+    create_der_from_decoded_value, encode_bit_string, encode_boolean, encode_integer,
+    encode_object_identifier, encode_octet_string, encode_sequence, encode_set, encode_utf8_string,
 };
 
 use clap::{Parser, Subcommand};
 use std::fs;
 use std::path::Path;
+
+use base64::{Engine, engine::general_purpose};
 
 #[derive(Parser)]
 #[command(name = "DER Tool", version, about = "Run DER encoding/decoding tests")]
@@ -69,7 +70,13 @@ fn run_test_data_crl() {
 fn run_test_data_cert() {
     let result = fs::read("./fixtures/leaf_cert.der").expect("Failed to read der data");
     match decode(result) {
-        Ok(decoded) => print_decoded_value(&decoded, 1),
+        Ok(decoded) => {
+            print_decoded_value(&decoded, 1);
+            match create_der_from_decoded_value(&decoded) {
+                Some(encoded) => println!("{}", der_to_pem(&encoded, "CERTIFICATE")),
+                None => eprintln!("Error: re encoding"),
+            }
+        }
         Err(e) => eprintln!("Error: {}", e),
     }
 }
@@ -104,7 +111,22 @@ fn run_test_data() {
     );
 
     match decode(set_encoded) {
-        Ok(decoded) => print_decoded_value(&decoded, 1),
+        Ok(decoded) => {
+            print_decoded_value(&decoded, 1);
+        }
         Err(e) => eprintln!("Error: {}", e),
     }
+}
+
+fn der_to_pem(der: &[u8], label: &str) -> String {
+    let base64_encoded = general_purpose::STANDARD.encode(der);
+    let mut pem = format!("-----BEGIN {}-----\n", label);
+
+    for chunk in base64_encoded.as_bytes().chunks(64) {
+        pem.push_str(&String::from_utf8_lossy(chunk));
+        pem.push('\n');
+    }
+
+    pem.push_str(&format!("-----END {}-----\n", label));
+    pem
 }

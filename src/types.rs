@@ -15,4 +15,20 @@ pub const CONTEXT_SPECIFIC_3_TAG: u8 = 0xA3; // hard coded to be followed by a s
 pub const LONG_FORM_DECODE: u8 = 0x7F;
 pub const LONG_FORM: u8 = 0x80;
 
+#[derive(Debug, PartialEq)]
+pub enum DecodedValue {
+    Integer(i64),
+    Boolean(bool),
+    Utf8String(String),
+    OctetString(Vec<u8>),
+    BitString { unused_bits: u8, data: Vec<u8> },
+    ObjectIdentifier(String),
+    Null,
+    PrintableString(String),
+    GeneralizedTime(String),
+    UtcTime(String),
+    Sequence(Vec<DecodedValue>),
+    Set(Vec<DecodedValue>),
+    Unknown(u8, Vec<u8>),
+}
 //PrintableString

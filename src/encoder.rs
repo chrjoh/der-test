@@ -198,6 +198,38 @@ pub fn encode_set(elements: &[Vec<u8>]) -> Vec<u8> {
     result.extend(content);
     result
 }
+pub fn create_der_from_decoded_value(value: &DecodedValue) -> Option<Vec<u8>> {
+    match value {
+        DecodedValue::Integer(i) => Some(encode_integer(*i)),
+        DecodedValue::Boolean(b) => Some(encode_boolean(*b)),
+        DecodedValue::Utf8String(s) => Some(encode_utf8_string(s.clone())),
+        DecodedValue::PrintableString(s) => Some(encode_printable_string(s.clone())),
+        DecodedValue::OctetString(data) => Some(encode_octet_string(data)),
+        DecodedValue::BitString { unused_bits, data } => {
+            Some(encode_bit_string(data, *unused_bits))
+        }
+        DecodedValue::ObjectIdentifier(oid) => encode_object_identifier(oid),
+        DecodedValue::Null => Some(encode_null()),
+        DecodedValue::GeneralizedTime(dt) => encode_generalized_time(dt),
+        DecodedValue::UtcTime(dt) => encode_utc_time(dt),
+        DecodedValue::Sequence(elements) => {
+            let encoded_elements: Option<Vec<Vec<u8>>> =
+                elements.iter().map(create_der_from_decoded_value).collect();
+            encoded_elements.map(|els| encode_sequence(&els))
+        }
+        DecodedValue::Set(elements) => {
+            let encoded_elements: Option<Vec<Vec<u8>>> =
+                elements.iter().map(create_der_from_decoded_value).collect();
+            encoded_elements.map(|els| encode_set(&els))
+        }
+        DecodedValue::Unknown(tag, data) => {
+            let mut result = vec![*tag];
+            result.extend(encode_length(data.len()));
+            result.extend(data);
+            Some(result)
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -391,5 +423,60 @@ mod tests {
         let el2 = encode_integer(1);
         let set = encode_set(&[el1, el2]);
         assert_eq!(set[0], SET_TAG);
+    }
+
+    #[test]
+    fn test_encode_integer() {
+        let value = DecodedValue::Integer(42);
+        let encoded = create_der_from_decoded_value(&value).unwrap();
+        assert_eq!(encoded, encode_integer(42));
+    }
+
+    #[test]
+    fn test_encode_decode_boolean_true() {
+        let value = DecodedValue::Boolean(true);
+        let encoded = create_der_from_decoded_value(&value).unwrap();
+        assert_eq!(encoded, encode_boolean(true));
+    }
+
+    #[test]
+    fn test_encode_decode_utf8_string() {
+        let value = DecodedValue::Utf8String("Hello".to_string());
+        let encoded = create_der_from_decoded_value(&value).unwrap();
+        assert_eq!(encoded, encode_utf8_string("Hello".to_string()));
+    }
+
+    #[test]
+    fn test_encode_decode_object_identifier() {
+        let value = DecodedValue::ObjectIdentifier("1.2.840.113549".to_string());
+        let encoded = create_der_from_decoded_value(&value).unwrap();
+        let expected = encode_object_identifier("1.2.840.113549").unwrap();
+        assert_eq!(encoded, expected);
+    }
+
+    #[test]
+    fn test_encode_decode_sequence() {
+        let value =
+            DecodedValue::Sequence(vec![DecodedValue::Integer(1), DecodedValue::Boolean(false)]);
+        let encoded = create_der_from_decoded_value(&value).unwrap();
+
+        let expected = encode_sequence(&[encode_integer(1), encode_boolean(false)]);
+        assert_eq!(encoded, expected);
+    }
+
+    #[test]
+    fn test_encode_set() {
+        let value = DecodedValue::Set(vec![DecodedValue::Integer(2), DecodedValue::Integer(1)]);
+        let encoded = create_der_from_decoded_value(&value).unwrap();
+
+        let expected = encode_set(&[encode_integer(2), encode_integer(1)]);
+        assert_eq!(encoded, expected);
+    }
+
+    #[test]
+    fn test_encode_decode_null() {
+        let value = DecodedValue::Null;
+        let encoded = create_der_from_decoded_value(&value).unwrap();
+        assert_eq!(encoded, encode_null());
     }
 }

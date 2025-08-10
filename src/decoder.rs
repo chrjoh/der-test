@@ -228,3 +228,70 @@ pub fn decode(data: Vec<u8>) -> Result<DecodedValue, String> {
         None => Err("Failed to decode DER structure".to_string()),
     }
 }
+
+pub fn print_decoded_value(value: &DecodedValue, indent: usize) {
+    let indent_str = " ".repeat(indent);
+
+    match value {
+        DecodedValue::Integer(i) => println!("{indent_str}Integer({})", i),
+        DecodedValue::Boolean(b) => println!("{indent_str}Boolean({})", b),
+        DecodedValue::Utf8String(s) => println!("{indent_str}Utf8String({})", s),
+        DecodedValue::PrintableString(s) => println!("{indent_str}PrintableString({})", s),
+        DecodedValue::GeneralizedTime(s) => println!("{indent_str}GeneralizedTime({})", s),
+        DecodedValue::UtcTime(s) => println!("{indent_str}UtcTime({})", s),
+        DecodedValue::ObjectIdentifier(oid) => {
+            println!("{indent_str}ObjectIdentifier({})", oid)
+        }
+        DecodedValue::Null => println!("{indent_str}Null"),
+
+        DecodedValue::OctetString(data) => {
+            println!("{indent_str}OctetString [");
+            print_vec_u8(data, indent + 4);
+            println!("{indent_str}]");
+        }
+
+        DecodedValue::BitString { unused_bits, data } => {
+            println!("{indent_str}BitString {{");
+            println!("{indent_str}    unused_bits: {},", unused_bits);
+            println!("{indent_str}    data: [");
+            print_vec_u8(data, indent + 8);
+            println!("{indent_str}    ]");
+            println!("{indent_str}}}");
+        }
+
+        DecodedValue::Unknown(tag, data) => {
+            println!("{indent_str}Unknown(tag: {}, data: [", tag);
+            print_vec_u8(data, indent + 4);
+            println!("{indent_str}])");
+        }
+
+        DecodedValue::Sequence(seq) => {
+            println!("{indent_str}Sequence [");
+            for item in seq {
+                print_decoded_value(item, indent + 4);
+            }
+            println!("{indent_str}]");
+        }
+
+        DecodedValue::Set(set) => {
+            println!("{indent_str}Set [");
+            for item in set {
+                print_decoded_value(item, indent + 4);
+            }
+            println!("{indent_str}]");
+        }
+    }
+}
+
+fn print_vec_u8(data: &[u8], indent: usize) {
+    let indent_str = " ".repeat(indent);
+    for (i, byte) in data.iter().enumerate() {
+        if i % 16 == 0 {
+            print!("{indent_str}");
+        }
+        print!("{:02X} ", byte);
+        if i % 16 == 15 || i == data.len() - 1 {
+            println!();
+        }
+    }
+}

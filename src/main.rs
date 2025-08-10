@@ -3,7 +3,7 @@ mod decoder;
 mod encoder;
 mod types;
 
-use crate::decoder::decode;
+use crate::decoder::{decode, print_decoded_value};
 use crate::encoder::{
     encode_bit_string, encode_boolean, encode_integer, encode_object_identifier,
     encode_octet_string, encode_sequence, encode_set, encode_utf8_string,
@@ -40,12 +40,12 @@ fn main() {
     );
 
     match decode(set_encoded) {
-        Ok(decoded) => println!("Decoded: {:#?}", decoded),
+        Ok(decoded) => print_decoded_value(&decoded, 1),
         Err(e) => eprintln!("Error: {}", e),
     }
     let result = fs::read("./fixtures/leaf_cert.der").expect("Failed to read der data");
     match decode(result) {
-        Ok(decoded) => println!("Decoded: {:#?}", decoded),
+        Ok(decoded) => print_decoded_value(&decoded, 1),
         Err(e) => eprintln!("Error: {}", e),
     }
 }

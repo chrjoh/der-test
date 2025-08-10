@@ -186,3 +186,181 @@ pub fn encode_set(elements: &[Vec<u8>]) -> Vec<u8> {
     result.extend(content);
     result
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_encode_length_short() {
+        assert_eq!(encode_length(127), vec![127]);
+    }
+
+    #[test]
+    fn test_encode_length_long() {
+        assert_eq!(encode_length(300), vec![0x82, 0x01, 0x2C]);
+    }
+
+    #[test]
+    fn test_encode_integer_positive() {
+        assert_eq!(encode_integer(300), vec![INTEGER_TAG, 0x02, 0x01, 0x2C]);
+    }
+
+    #[test]
+    fn test_encode_integer_zero() {
+        assert_eq!(encode_integer(0), vec![INTEGER_TAG, 0x01, 0x00]);
+    }
+
+    #[test]
+    fn test_encode_boolean_true() {
+        assert_eq!(encode_boolean(true), vec![BOOLEAN_TAG, 0x01, 0xFF]);
+    }
+
+    #[test]
+    fn test_encode_boolean_false() {
+        assert_eq!(encode_boolean(false), vec![BOOLEAN_TAG, 0x01, 0x00]);
+    }
+
+    #[test]
+    fn test_encode_bit_string() {
+        let bits = vec![0b10101010];
+        assert_eq!(
+            encode_bit_string(&bits, 3),
+            vec![BIT_STRING_TAG, 0x02, 0x03, 0b10101010]
+        );
+    }
+
+    #[test]
+    fn test_encode_octet_string() {
+        let data = vec![0xDE, 0xAD, 0xBE, 0xEF];
+        assert_eq!(
+            encode_octet_string(&data),
+            vec![OCTET_STRING_TAG, 0x04, 0xDE, 0xAD, 0xBE, 0xEF]
+        );
+    }
+
+    #[test]
+    fn test_encode_utf8_string() {
+        let s = "hello".to_string();
+        assert_eq!(
+            encode_utf8_string(s),
+            vec![UTF8STRING_TAG, 0x05, b'h', b'e', b'l', b'l', b'o']
+        );
+    }
+
+    #[test]
+    fn test_encode_printable_string() {
+        let s = "world".to_string();
+        assert_eq!(
+            encode_printable_string(s),
+            vec![PRINTABLE_STRING_TAG, 0x05, b'w', b'o', b'r', b'l', b'd']
+        );
+    }
+
+    #[test]
+    fn test_encode_object_identifier_valid() {
+        let oid = "1.2.840.113549";
+        assert_eq!(
+            encode_object_identifier(oid),
+            Some(vec![
+                OBJECT_IDENTIFIER_TAG,
+                0x06,
+                0x2A,
+                0x86,
+                0x48,
+                0x86,
+                0xF7,
+                0x0D
+            ])
+        );
+    }
+
+    #[test]
+    fn test_encode_object_identifier_invalid() {
+        assert_eq!(encode_object_identifier("1"), None);
+    }
+
+    #[test]
+    fn test_encode_generalized_time_valid() {
+        let dt = "20250101000000Z";
+        assert_eq!(
+            encode_generalized_time(dt),
+            Some(vec![
+                GENERALIZED_TIME_TAG,
+                0x0F,
+                b'2',
+                b'0',
+                b'2',
+                b'5',
+                b'0',
+                b'1',
+                b'0',
+                b'1',
+                b'0',
+                b'0',
+                b'0',
+                b'0',
+                b'0',
+                b'0',
+                b'Z'
+            ])
+        );
+    }
+
+    #[test]
+    fn test_encode_generalized_time_invalid() {
+        assert_eq!(encode_generalized_time("20250101Z"), None);
+    }
+
+    #[test]
+    fn test_encode_utc_time_valid() {
+        let dt = "250101000000Z";
+        assert_eq!(
+            encode_utc_time(dt),
+            Some(vec![
+                UTC_TIME_TAG,
+                0x0D,
+                b'2',
+                b'5',
+                b'0',
+                b'1',
+                b'0',
+                b'1',
+                b'0',
+                b'0',
+                b'0',
+                b'0',
+                b'0',
+                b'0',
+                b'Z'
+            ])
+        );
+    }
+
+    #[test]
+    fn test_encode_utc_time_invalid() {
+        assert_eq!(encode_utc_time("250101Z"), None);
+    }
+
+    #[test]
+    fn test_encode_null() {
+        assert_eq!(encode_null(), vec![NULL_TAG, 0x00]);
+    }
+
+    #[test]
+    fn test_encode_sequence() {
+        let el1 = encode_integer(1);
+        let el2 = encode_boolean(true);
+        let seq = encode_sequence(&[el1.clone(), el2.clone()]);
+        assert_eq!(seq[0], SEQUENCE_TAG);
+        assert!(seq.ends_with(&[0x01, 0xFF]));
+    }
+
+    #[test]
+    fn test_encode_set_sorted() {
+        let el1 = encode_integer(2);
+        let el2 = encode_integer(1);
+        let set = encode_set(&[el1, el2]);
+        assert_eq!(set[0], SET_TAG);
+    }
+}

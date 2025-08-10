@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use crate::types::*;
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum DecodedValue {
     Integer(i64),
     Boolean(bool),
@@ -293,5 +293,185 @@ fn print_vec_u8(data: &[u8], indent: usize) {
         if i % 16 == 15 || i == data.len() - 1 {
             println!();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_decode_length_short() {
+        assert_eq!(decode_length(&[0x7F]), Some((127, 1)));
+    }
+
+    #[test]
+    fn test_decode_length_long() {
+        assert_eq!(decode_length(&[0x82, 0x01, 0xF4]), Some((500, 3)));
+    }
+
+    #[test]
+    fn test_decode_integer_value() {
+        let encoded = vec![INTEGER_TAG, 0x02, 0x01, 0x2C];
+        let decoded = decode(encoded).unwrap();
+        assert_eq!(decoded, DecodedValue::Integer(300));
+    }
+
+    #[test]
+    fn test_decode_boolean_true() {
+        let encoded = vec![BOOLEAN_TAG, 0x01, 0xFF];
+        let decoded = decode(encoded).unwrap();
+        assert_eq!(decoded, DecodedValue::Boolean(true));
+    }
+
+    #[test]
+    fn test_decode_boolean_false() {
+        let encoded = vec![BOOLEAN_TAG, 0x01, 0x00];
+        let decoded = decode(encoded).unwrap();
+        assert_eq!(decoded, DecodedValue::Boolean(false));
+    }
+
+    #[test]
+    fn test_decode_octet_string() {
+        let encoded = vec![OCTET_STRING_TAG, 0x04, 0xDE, 0xAD, 0xBE, 0xEF];
+        let decoded = decode(encoded).unwrap();
+        assert_eq!(
+            decoded,
+            DecodedValue::OctetString(vec![0xDE, 0xAD, 0xBE, 0xEF])
+        );
+    }
+
+    #[test]
+    fn test_decode_utf8_string() {
+        let encoded = vec![UTF8STRING_TAG, 0x05, b'h', b'e', b'l', b'l', b'o'];
+        let decoded = decode(encoded).unwrap();
+        assert_eq!(decoded, DecodedValue::Utf8String("hello".to_string()));
+    }
+
+    #[test]
+    fn test_decode_printable_string() {
+        let encoded = vec![PRINTABLE_STRING_TAG, 0x05, b'w', b'o', b'r', b'l', b'd'];
+        let decoded = decode(encoded).unwrap();
+        assert_eq!(decoded, DecodedValue::PrintableString("world".to_string()));
+    }
+
+    #[test]
+    fn test_decode_bit_string() {
+        let encoded = vec![BIT_STRING_TAG, 0x02, 0x03, 0b10101010];
+        let decoded = decode(encoded).unwrap();
+        assert_eq!(
+            decoded,
+            DecodedValue::BitString {
+                unused_bits: 3,
+                data: vec![0b10101010]
+            }
+        );
+    }
+
+    #[test]
+    fn test_decode_object_identifier() {
+        let encoded = vec![
+            OBJECT_IDENTIFIER_TAG,
+            0x06,
+            0x2A,
+            0x86,
+            0x48,
+            0x86,
+            0xF7,
+            0x0D,
+        ];
+        let decoded = decode(encoded).unwrap();
+        assert_eq!(
+            decoded,
+            DecodedValue::ObjectIdentifier("1.2.840.113549".to_string())
+        );
+    }
+
+    #[test]
+    fn test_decode_generalized_time() {
+        let encoded = vec![
+            GENERALIZED_TIME_TAG,
+            0x0F,
+            b'2',
+            b'0',
+            b'2',
+            b'5',
+            b'0',
+            b'1',
+            b'0',
+            b'1',
+            b'0',
+            b'0',
+            b'0',
+            b'0',
+            b'0',
+            b'0',
+            b'Z',
+        ];
+        let decoded = decode(encoded).unwrap();
+        assert_eq!(
+            decoded,
+            DecodedValue::GeneralizedTime("20250101000000Z".to_string())
+        );
+    }
+
+    #[test]
+    fn test_decode_utc_time() {
+        let encoded = vec![
+            UTC_TIME_TAG,
+            0x0D,
+            b'2',
+            b'5',
+            b'0',
+            b'1',
+            b'0',
+            b'1',
+            b'0',
+            b'0',
+            b'0',
+            b'0',
+            b'0',
+            b'0',
+            b'Z',
+        ];
+        let decoded = decode(encoded).unwrap();
+        assert_eq!(decoded, DecodedValue::UtcTime("250101000000Z".to_string()));
+    }
+
+    #[test]
+    fn test_decode_null() {
+        let encoded = vec![NULL_TAG, 0x00];
+        let decoded = decode(encoded).unwrap();
+        assert_eq!(decoded, DecodedValue::Null);
+    }
+
+    #[test]
+    fn test_decode_sequence() {
+        let el1 = vec![INTEGER_TAG, 0x01, 0x01];
+        let el2 = vec![BOOLEAN_TAG, 0x01, 0xFF];
+        let content = [el1.clone(), el2.clone()].concat();
+        let encoded = vec![SEQUENCE_TAG, content.len() as u8];
+        let mut full = encoded.clone();
+        full.extend(content);
+        let decoded = decode(full).unwrap();
+        assert_eq!(
+            decoded,
+            DecodedValue::Sequence(vec![DecodedValue::Integer(1), DecodedValue::Boolean(true)])
+        );
+    }
+
+    #[test]
+    fn test_decode_set() {
+        let el1 = vec![INTEGER_TAG, 0x01, 0x02];
+        let el2 = vec![INTEGER_TAG, 0x01, 0x01];
+        let content = [el1.clone(), el2.clone()].concat();
+        let encoded = vec![SET_TAG, content.len() as u8];
+        let mut full = encoded.clone();
+        full.extend(content);
+        let decoded = decode(full).unwrap();
+        assert_eq!(
+            decoded,
+            DecodedValue::Set(vec![DecodedValue::Integer(2), DecodedValue::Integer(1)])
+        );
     }
 }

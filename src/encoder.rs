@@ -139,7 +139,7 @@ pub fn encode_generalized_time(datetime: &str) -> Option<Vec<u8>> {
 }
 pub fn encode_utc_time(datetime: &str) -> Option<Vec<u8>> {
     if !datetime.ends_with('Z') || datetime.len() != 13 {
-        return None; // Must be in "YYYYMMDDHHMMSSZ" format
+        return None; // Must be in "YYMMDDHHMMSSZ" format
     }
 
     let bytes = datetime.as_bytes();

@@ -3,7 +3,7 @@ use crate::types::*;
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use std::collections::HashMap;
-//encodeing
+//encoding
 // 0x80 = binary 10000000
 // 0x80 | 2 = 0x82 → means "length is encoded in 2 bytes"
 // decoding
@@ -107,7 +107,7 @@ fn decode_bit_string_value(bytes: &[u8]) -> Option<DecodedValue> {
 // Shift left by 7 bits:(This means we add 7 zeros to the right)
 // 00000110 << 7 = 0011000000000
 //
-pub fn decode_object_identifier_value(bytes: &[u8]) -> Option<DecodedValue> {
+fn decode_object_identifier_value(bytes: &[u8]) -> Option<DecodedValue> {
     if bytes.is_empty() {
         return None;
     }
@@ -393,7 +393,7 @@ fn print_vec_u8(data: &[u8], indent: usize) {
     }
 }
 
-pub fn get_oid_map() -> HashMap<&'static str, &'static str> {
+fn get_oid_map() -> HashMap<&'static str, &'static str> {
     let mut oid_map = HashMap::new();
 
     // Subject and Issuer fields

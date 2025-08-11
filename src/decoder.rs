@@ -247,6 +247,11 @@ pub fn decode(data: Vec<u8>) -> Result<DecodedValue, String> {
 }
 
 pub fn print_decoded_value(value: &DecodedValue, indent: usize) {
+    let oid_map = get_oid_map();
+    print_decoded_value_private(value, indent, &oid_map);
+}
+
+fn print_decoded_value_private(value: &DecodedValue, indent: usize, oid_map: &HashMap<&str, &str>) {
     let indent_str = " ".repeat(indent);
 
     match value {
@@ -258,7 +263,8 @@ pub fn print_decoded_value(value: &DecodedValue, indent: usize) {
         DecodedValue::GeneralizedTime(s) => println!("{indent_str}GeneralizedTime({})", s),
         DecodedValue::UtcTime(s) => println!("{indent_str}UtcTime({})", s),
         DecodedValue::ObjectIdentifier(oid) => {
-            println!("{indent_str}ObjectIdentifier({})", oid)
+            let oid_name = oid_map.get(oid.as_str()).unwrap_or(&"not_found_in_oid_map");
+            println!("{indent_str}ObjectIdentifier({} = {})", oid, oid_name)
         }
         DecodedValue::Null => println!("{indent_str}Null"),
 
@@ -286,21 +292,21 @@ pub fn print_decoded_value(value: &DecodedValue, indent: usize) {
         DecodedValue::Sequence(seq) => {
             println!("{indent_str}Sequence [");
             for item in seq {
-                print_decoded_value(item, indent + 4);
+                print_decoded_value_private(item, indent + 4, oid_map);
             }
             println!("{indent_str}]");
         }
         DecodedValue::ContextSequence0(seq) => {
             println!("{indent_str}Sequence0 [");
             for item in seq {
-                print_decoded_value(item, indent + 4);
+                print_decoded_value_private(item, indent + 4, oid_map);
             }
             println!("{indent_str}]");
         }
         DecodedValue::ContextSequence3(seq) => {
             println!("{indent_str}Sequence3 [");
             for item in seq {
-                print_decoded_value(item, indent + 4);
+                print_decoded_value_private(item, indent + 4, oid_map);
             }
             println!("{indent_str}]");
         }
@@ -308,7 +314,7 @@ pub fn print_decoded_value(value: &DecodedValue, indent: usize) {
         DecodedValue::Set(set) => {
             println!("{indent_str}Set [");
             for item in set {
-                print_decoded_value(item, indent + 4);
+                print_decoded_value_private(item, indent + 4, oid_map);
             }
             println!("{indent_str}]");
         }
@@ -326,6 +332,76 @@ fn print_vec_u8(data: &[u8], indent: usize) {
             println!();
         }
     }
+}
+use std::collections::HashMap;
+
+pub fn get_oid_map() -> HashMap<&'static str, &'static str> {
+    let mut oid_map = HashMap::new();
+
+    // Subject and Issuer fields
+    oid_map.insert("2.5.4.3", "commonName");
+    oid_map.insert("2.5.4.6", "countryName");
+    oid_map.insert("2.5.4.10", "organizationName");
+    oid_map.insert("2.5.4.11", "organizationalUnitName");
+    oid_map.insert("2.5.4.7", "localityName");
+    oid_map.insert("2.5.4.8", "stateOrProvinceName");
+    oid_map.insert("2.5.4.9", "streetAddress");
+    oid_map.insert("2.5.4.5", "serialNumber");
+
+    // Key identifiers and constraints
+    oid_map.insert("2.5.29.14", "subjectKeyIdentifier");
+    oid_map.insert("2.5.29.35", "authorityKeyIdentifier");
+    oid_map.insert("2.5.29.19", "basicConstraints");
+    oid_map.insert("2.5.29.15", "keyUsage");
+    oid_map.insert("2.5.29.37", "extendedKeyUsage");
+
+    // Alternative names
+    oid_map.insert("2.5.29.17", "subjectAltName");
+    oid_map.insert("2.5.29.18", "issuerAltName");
+
+    // Certificate Revocation List (CRL) extensions
+    oid_map.insert("2.5.29.20", "CRLNumber");
+    oid_map.insert("2.5.29.27", "DeltaCRLIndicator");
+    oid_map.insert("2.5.29.28", "IssuingDistributionPoint");
+    oid_map.insert("2.5.29.46", "FreshestCRL");
+    oid_map.insert("2.5.29.21", "ReasonCode");
+    oid_map.insert("2.5.29.24", "InvalidityDate");
+    oid_map.insert("2.5.29.29", "CertificateIssuer");
+
+    // Signature algorithms (RSA, DSA, ECDSA)
+    oid_map.insert("1.2.840.113549.1.1.5", "sha1WithRSAEncryption");
+    oid_map.insert("1.2.840.113549.1.1.11", "sha256WithRSAEncryption");
+    oid_map.insert("1.2.840.113549.1.1.12", "sha384WithRSAEncryption");
+    oid_map.insert("1.2.840.113549.1.1.13", "sha512WithRSAEncryption");
+    oid_map.insert("1.2.840.10040.4.3", "dsaWithSHA1");
+    oid_map.insert("2.16.840.1.101.3.4.3.1", "dsaWithSHA224");
+    oid_map.insert("2.16.840.1.101.3.4.3.2", "dsaWithSHA256");
+    oid_map.insert("1.2.840.10045.4.3.1", "ecdsaWithSHA224");
+    oid_map.insert("1.2.840.10045.4.3.2", "ecdsaWithSHA256");
+    oid_map.insert("1.2.840.10045.4.3.3", "ecdsaWithSHA384");
+    oid_map.insert("1.2.840.10045.4.3.4", "ecdsaWithSHA512");
+
+    // Public key algorithms
+    oid_map.insert("1.2.840.113549.1.1.1", "rsaEncryption");
+    oid_map.insert("1.2.840.10040.4.1", "dsa");
+    oid_map.insert("1.2.840.10045.2.1", "ecPublicKey");
+
+    // Named elliptic curves
+    oid_map.insert("1.3.132.0.33", "secp224r1");
+    oid_map.insert("1.3.132.0.34", "secp384r1");
+    oid_map.insert("1.3.132.0.35", "secp521r1");
+    oid_map.insert("1.2.840.10045.3.1.7", "prime256v1");
+
+    // Extended key usages
+    oid_map.insert("1.3.6.1.5.5.7.3.1", "serverAuth");
+    oid_map.insert("1.3.6.1.5.5.7.3.2", "clientAuth");
+
+    // Authority info and policies
+    oid_map.insert("1.3.6.1.5.5.7.1.1", "authorityInfoAccess");
+    oid_map.insert("2.5.29.31", "cRLDistributionPoints");
+    oid_map.insert("2.5.29.32", "certificatePolicies");
+
+    oid_map
 }
 
 #[cfg(test)]

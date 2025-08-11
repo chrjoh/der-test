@@ -2,7 +2,7 @@
 use crate::types::*;
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
-
+use std::collections::HashMap;
 //encodeing
 // 0x80 = binary 10000000
 // 0x80 | 2 = 0x82 → means "length is encoded in 2 bytes"
@@ -333,7 +333,6 @@ fn print_vec_u8(data: &[u8], indent: usize) {
         }
     }
 }
-use std::collections::HashMap;
 
 pub fn get_oid_map() -> HashMap<&'static str, &'static str> {
     let mut oid_map = HashMap::new();

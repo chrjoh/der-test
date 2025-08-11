@@ -256,7 +256,9 @@ fn print_decoded_value_private(value: &DecodedValue, indent: usize, oid_map: &Ha
 
     match value {
         DecodedValue::Integer(i) => println!("{indent_str}Integer({})", i),
-        DecodedValue::BigInteger(i) => println!("{indent_str}BigInteger({})", i),
+        DecodedValue::BigInteger(i) => {
+            println!("{indent_str}BigInteger({})", format_bigint_as_hex(i))
+        }
         DecodedValue::Boolean(b) => println!("{indent_str}Boolean({})", b),
         DecodedValue::Utf8String(s) => println!("{indent_str}Utf8String({})", s),
         DecodedValue::PrintableString(s) => println!("{indent_str}PrintableString({})", s),
@@ -319,6 +321,15 @@ fn print_decoded_value_private(value: &DecodedValue, indent: usize, oid_map: &Ha
             println!("{indent_str}]");
         }
     }
+}
+
+fn format_bigint_as_hex(i: &BigInt) -> String {
+    let bytes = i.to_signed_bytes_be(); // Big-endian byte array
+    bytes
+        .iter()
+        .map(|b| format!("{:02X}", b)) // Format each byte as two-digit hex
+        .collect::<Vec<_>>()
+        .join(":")
 }
 
 fn print_vec_u8(data: &[u8], indent: usize) {

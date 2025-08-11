@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 use crate::types::*;
+use num_bigint::BigInt;
+use num_traits::ToPrimitive;
 
 //encodeing
 // 0x80 = binary 10000000
@@ -38,12 +40,17 @@ fn decode_length(data: &[u8]) -> Option<(usize, usize)> {
         Some((length, 1 + num_bytes))
     }
 }
+
 fn decode_integer_value(bytes: &[u8]) -> Option<DecodedValue> {
-    let mut value: i64 = 0;
-    for &b in bytes {
-        value = (value << 8) | b as i64;
+    // Interpret as signed big-endian
+    let bigint = BigInt::from_signed_bytes_be(bytes);
+
+    // Try converting to i64 if possible
+    if let Some(value) = bigint.to_i64() {
+        Some(DecodedValue::Integer(value))
+    } else {
+        Some(DecodedValue::BigInteger(bigint)) // You may need to define this variant
     }
-    Some(DecodedValue::Integer(value))
 }
 
 fn decode_boolean_value(bytes: &[u8]) -> Option<DecodedValue> {
@@ -244,6 +251,7 @@ pub fn print_decoded_value(value: &DecodedValue, indent: usize) {
 
     match value {
         DecodedValue::Integer(i) => println!("{indent_str}Integer({})", i),
+        DecodedValue::BigInteger(i) => println!("{indent_str}BigInteger({})", i),
         DecodedValue::Boolean(b) => println!("{indent_str}Boolean({})", b),
         DecodedValue::Utf8String(s) => println!("{indent_str}Utf8String({})", s),
         DecodedValue::PrintableString(s) => println!("{indent_str}PrintableString({})", s),

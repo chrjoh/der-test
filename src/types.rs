@@ -1,5 +1,5 @@
+use num_bigint::BigInt;
 use std::convert::TryFrom;
-
 pub const LONG_FORM_DECODE: u8 = 0x7F;
 pub const LONG_FORM: u8 = 0x80;
 
@@ -55,6 +55,7 @@ impl TryFrom<u8> for Tag {
 #[derive(Debug, PartialEq)]
 pub enum DecodedValue {
     Integer(i64),
+    BigInteger(BigInt),
     Boolean(bool),
     Utf8String(String),
     OctetString(Vec<u8>),
@@ -70,4 +71,3 @@ pub enum DecodedValue {
     Set(Vec<DecodedValue>),
     Unknown(u8, Vec<u8>),
 }
-//PrintableString

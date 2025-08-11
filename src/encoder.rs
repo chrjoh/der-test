@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 use crate::types::*;
+use num_bigint::BigInt;
+use num_traits::Signed;
 // Short form: If the length is less than 128, it's encoded as a single byte.
 // Long form: If the length is 128 or more, it's encoded as multiple bytes:
 // First byte: 0x80 | number_of_length_bytes
@@ -26,18 +28,25 @@ fn encode_length(length: usize) -> Vec<u8> {
     }
 }
 
-pub fn encode_integer(value: i64) -> Vec<u8> {
-    let mut bytes = value.to_be_bytes().to_vec();
+pub fn encode_integer(value: &BigInt) -> Vec<u8> {
+    let mut bytes = value.to_signed_bytes_be();
 
     // Remove leading 0x00 or 0xFF bytes that are not needed
-    while bytes.len() > 1
-        && ((bytes[0] == 0x00 && bytes[1] & 0x80 == 0)
-            || (bytes[0] == 0xFF && bytes[1] & 0x80 != 0))
+    // In DER (Distinguished Encoding Rules), integers must be
+    // encoded in the shortest possible form that still
+    // preserves their value and sign. This means:
+    // - Positive integers must not have leading 0x00 bytes
+    //   unless needed to prevent misinterpretation as negative.
+    // - Negative integers must not have leading 0xFF bytes
+    //   unless needed to preserve the sign.
+    if (bytes[0] & 0x80 != 0 && value.is_positive())
+        || (bytes[0] & 0x80 == 0 && value.is_negative())
     {
-        bytes.remove(0);
+        let prefix = if value.is_positive() { 0x00 } else { 0xFF };
+        bytes.insert(0, prefix);
     }
 
-    let mut result: Vec<u8> = vec![Tag::Integer.into()];
+    let mut result = vec![Tag::Integer.into()];
     result.extend(encode_length(bytes.len()));
     result.extend(bytes);
     result
@@ -202,7 +211,8 @@ pub fn encode_set(elements: &[Vec<u8>]) -> Vec<u8> {
 }
 pub fn create_der_from_decoded_value(value: &DecodedValue) -> Option<Vec<u8>> {
     match value {
-        DecodedValue::Integer(i) => Some(encode_integer(*i)),
+        DecodedValue::Integer(i) => Some(encode_integer(&BigInt::from(*i))),
+        DecodedValue::BigInteger(i) => Some(encode_integer(i)),
         DecodedValue::Boolean(b) => Some(encode_boolean(*b)),
         DecodedValue::Utf8String(s) => Some(encode_utf8_string(s.clone())),
         DecodedValue::PrintableString(s) => Some(encode_printable_string(s.clone())),
@@ -260,14 +270,17 @@ mod tests {
     #[test]
     fn test_encode_integer_positive() {
         assert_eq!(
-            encode_integer(300),
+            encode_integer(&BigInt::from(300)),
             vec![Tag::Integer.into(), 0x02, 0x01, 0x2C]
         );
     }
 
     #[test]
     fn test_encode_integer_zero() {
-        assert_eq!(encode_integer(0), vec![Tag::Integer.into(), 0x01, 0x00]);
+        assert_eq!(
+            encode_integer(&BigInt::from(0)),
+            vec![Tag::Integer.into(), 0x01, 0x00]
+        );
     }
 
     #[test]
@@ -433,7 +446,7 @@ mod tests {
 
     #[test]
     fn test_encode_sequence() {
-        let el1 = encode_integer(1);
+        let el1 = encode_integer(&BigInt::from(1));
         let el2 = encode_boolean(true);
         let seq = encode_sequence(&[el1.clone(), el2.clone()]);
         assert_eq!(seq[0], Tag::Sequence.into());
@@ -442,8 +455,8 @@ mod tests {
 
     #[test]
     fn test_encode_set_sorted() {
-        let el1 = encode_integer(2);
-        let el2 = encode_integer(1);
+        let el1 = encode_integer(&BigInt::from(2));
+        let el2 = encode_integer(&BigInt::from(1));
         let set = encode_set(&[el1, el2]);
         assert_eq!(set[0], Tag::Set.into());
     }
@@ -452,7 +465,7 @@ mod tests {
     fn test_encode_integer() {
         let value = DecodedValue::Integer(42);
         let encoded = create_der_from_decoded_value(&value).unwrap();
-        assert_eq!(encoded, encode_integer(42));
+        assert_eq!(encoded, encode_integer(&BigInt::from(42)));
     }
 
     #[test]
@@ -483,7 +496,7 @@ mod tests {
             DecodedValue::Sequence(vec![DecodedValue::Integer(1), DecodedValue::Boolean(false)]);
         let encoded = create_der_from_decoded_value(&value).unwrap();
 
-        let expected = encode_sequence(&[encode_integer(1), encode_boolean(false)]);
+        let expected = encode_sequence(&[encode_integer(&BigInt::from(1)), encode_boolean(false)]);
         assert_eq!(encoded, expected);
     }
 
@@ -492,7 +505,10 @@ mod tests {
         let value = DecodedValue::Set(vec![DecodedValue::Integer(2), DecodedValue::Integer(1)]);
         let encoded = create_der_from_decoded_value(&value).unwrap();
 
-        let expected = encode_set(&[encode_integer(2), encode_integer(1)]);
+        let expected = encode_set(&[
+            encode_integer(&BigInt::from(2)),
+            encode_integer(&BigInt::from(1)),
+        ]);
         assert_eq!(encoded, expected);
     }
 

@@ -7,6 +7,7 @@ use crate::encoder::{
     create_der_from_decoded_value, encode_bit_string, encode_boolean, encode_integer,
     encode_object_identifier, encode_octet_string, encode_sequence, encode_set, encode_utf8_string,
 };
+use num_bigint::BigInt;
 
 use clap::{Parser, Subcommand};
 use std::fs;
@@ -90,7 +91,7 @@ fn run_test_data() {
     let bit_data = vec![0b10101010, 0b11000000]; // 2 bytes of bit data
     let unused_bits = 6; // Last byte has only 2 meaningful bits
     let bit_encoded = encode_bit_string(&bit_data, unused_bits);
-    let int_encoded = encode_integer(42);
+    let int_encoded = encode_integer(&BigInt::from(42));
     let str_encoded = encode_octet_string(b"hello");
     let seq_encoded1 = encode_sequence(&[int_encoded, str_encoded]);
     let seq_encoded2 = encode_sequence(&[encode_boolean(true), encode_octet_string(b"world")]);

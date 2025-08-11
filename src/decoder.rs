@@ -49,7 +49,7 @@ fn decode_integer_value(bytes: &[u8]) -> Option<DecodedValue> {
     if let Some(value) = bigint.to_i64() {
         Some(DecodedValue::Integer(value))
     } else {
-        Some(DecodedValue::BigInteger(bigint)) // You may need to define this variant
+        Some(DecodedValue::BigInteger(bigint))
     }
 }
 

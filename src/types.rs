@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 pub const LONG_FORM_DECODE: u8 = 0x7F;
 pub const LONG_FORM: u8 = 0x80;
 
+/// Represents ASN.1 DER tags for various data types.
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Tag {
@@ -22,12 +23,15 @@ pub enum Tag {
     ContextSpecific3 = 0xA3, // hard coded to be followed by a seq
 }
 
+/// Converts a `Tag` into its corresponding `u8` value.
 impl From<Tag> for u8 {
     fn from(tag: Tag) -> Self {
         tag as u8
     }
 }
 
+/// Attempts to convert a `u8` value into a `Tag`.
+/// Returns `Err(())` if the value does not match any known tag.
 impl TryFrom<u8> for Tag {
     type Error = ();
 
@@ -52,22 +56,24 @@ impl TryFrom<u8> for Tag {
     }
 }
 
+/// Represents a decoded ASN.1 value in a structured form.
+/// Used for converting between DER and Rust-native types.
 #[derive(Debug, PartialEq)]
 pub enum DecodedValue {
-    Integer(i64),
-    BigInteger(BigInt),
-    Boolean(bool),
-    Utf8String(String),
-    OctetString(Vec<u8>),
-    BitString { unused_bits: u8, data: Vec<u8> },
-    ObjectIdentifier(String),
-    Null,
-    PrintableString(String),
-    GeneralizedTime(String),
-    UtcTime(String),
-    Sequence(Vec<DecodedValue>),
-    ContextSequence0(Vec<DecodedValue>),
-    ContextSequence3(Vec<DecodedValue>),
-    Set(Vec<DecodedValue>),
-    Unknown(u8, Vec<u8>),
+    Integer(i64),                                 // Small integer value
+    BigInteger(BigInt),                           // Arbitrary precision integer
+    Boolean(bool),                                // Boolean value
+    Utf8String(String),                           // UTF-8 encoded string
+    OctetString(Vec<u8>),                         // Raw byte string
+    BitString { unused_bits: u8, data: Vec<u8> }, // Bit string with unused bits count
+    ObjectIdentifier(String),                     // Object identifier (e.g., "1.2.840.113549")
+    Null,                                         // Null value
+    PrintableString(String),                      // PrintableString (subset of ASCII)
+    GeneralizedTime(String),                      // GeneralizedTime in "YYYYMMDDHHMMSSZ" format
+    UtcTime(String),                              // UTCTime in "YYMMDDHHMMSSZ" format
+    Sequence(Vec<DecodedValue>),                  // Sequence of values
+    ContextSequence0(Vec<DecodedValue>),          // Context-specific sequence with tag 0
+    ContextSequence3(Vec<DecodedValue>),          // Context-specific sequence with tag 3
+    Set(Vec<DecodedValue>),                       // Set of values (unordered, sorted in DER)
+    Unknown(u8, Vec<u8>),                         // Unknown tag with raw data
 }

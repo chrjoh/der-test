@@ -198,6 +198,20 @@ fn decode_set_value(bytes: &[u8]) -> Option<DecodedValue> {
     Some(DecodedValue::Set(elements))
 }
 
+/// Decodes a single DER-encoded ASN.1 element from the given byte slice.
+///
+/// This function attempts to parse the first ASN.1 element in the input data,
+/// including its tag, length, and value. It supports a variety of standard
+/// ASN.1 types such as Integer, Sequence, Set, Boolean, BitString, and more.
+///
+/// # Arguments
+///
+/// * `data` - A byte slice containing DER-encoded ASN.1 data.
+///
+/// # Returns
+///
+/// * `Some((DecodedValue, usize))` - The decoded value and the number of bytes consumed.
+/// * `None` - If the data is invalid or incomplete.
 fn decode_element(data: &[u8]) -> Option<(DecodedValue, usize)> {
     if data.is_empty() {
         return None;
@@ -238,7 +252,19 @@ fn decode_element(data: &[u8]) -> Option<(DecodedValue, usize)> {
 
     Some((decoded, end))
 }
-
+/// Decodes a complete DER-encoded ASN.1 structure from a byte vector.
+///
+/// This is a high-level wrapper around `decode_element` that returns a
+/// `Result` instead of an `Option`, making it more convenient for error handling.
+///
+/// # Arguments
+///
+/// * `data` - A `Vec<u8>` containing the DER-encoded ASN.1 structure.
+///
+/// # Returns
+///
+/// * `Ok(DecodedValue)` - The successfully decoded ASN.1 value.
+/// * `Err(String)` - An error message if decoding fails.
 pub fn decode(data: Vec<u8>) -> Result<DecodedValue, String> {
     match decode_element(&data) {
         Some((value, _)) => Ok(value),
@@ -246,11 +272,33 @@ pub fn decode(data: Vec<u8>) -> Result<DecodedValue, String> {
     }
 }
 
+/// Prints a decoded ASN.1 value with indentation for readability.
+///
+/// This is the public entry point for printing a `DecodedValue`. It initializes
+/// the OID (Object Identifier) map and delegates the actual printing to a
+/// private helper function.
+///
+/// # Arguments
+///
+/// * `value` - A reference to the decoded ASN.1 value to print.
+/// * `indent` - The number of spaces to use for indentation (typically 0).
 pub fn print_decoded_value(value: &DecodedValue, indent: usize) {
     let oid_map = get_oid_map();
     print_decoded_value_private(value, indent, &oid_map);
 }
 
+/// Recursively prints a decoded ASN.1 value with indentation and OID resolution.
+///
+/// This function handles all supported ASN.1 types and prints them in a
+/// human-readable format. It uses indentation to represent nested structures
+/// like sequences and sets. For object identifiers, it attempts to resolve
+/// them to human-friendly names using the provided OID map.
+///
+/// # Arguments
+///
+/// * `value` - A reference to the decoded ASN.1 value to print.
+/// * `indent` - The current indentation level (in spaces).
+/// * `oid_map` - A map of known OID strings to their human-readable names.
 fn print_decoded_value_private(value: &DecodedValue, indent: usize, oid_map: &HashMap<&str, &str>) {
     let indent_str = " ".repeat(indent);
 
@@ -324,10 +372,10 @@ fn print_decoded_value_private(value: &DecodedValue, indent: usize, oid_map: &Ha
 }
 
 fn format_bigint_as_hex(i: &BigInt) -> String {
-    let bytes = i.to_signed_bytes_be(); // Big-endian byte array
+    let bytes = i.to_signed_bytes_be();
     bytes
         .iter()
-        .map(|b| format!("{:02X}", b)) // Format each byte as two-digit hex
+        .map(|b| format!("{:02X}", b))
         .collect::<Vec<_>>()
         .join(":")
 }

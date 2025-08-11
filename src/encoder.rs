@@ -28,6 +28,8 @@ fn encode_length(length: usize) -> Vec<u8> {
     }
 }
 
+/// Encodes a BigInt as a DER-encoded INTEGER.
+/// Ensures minimal encoding while preserving sign.
 pub fn encode_integer(value: &BigInt) -> Vec<u8> {
     let mut bytes = value.to_signed_bytes_be();
 
@@ -52,6 +54,8 @@ pub fn encode_integer(value: &BigInt) -> Vec<u8> {
     result
 }
 
+/// Encodes a boolean value as a DER-encoded BOOLEAN.
+/// Uses 0xFF for true and 0x00 for false.
 pub fn encode_boolean(value: bool) -> Vec<u8> {
     let mut result: Vec<u8> = vec![Tag::Boolean.into()];
     result.push(0x01);
@@ -63,6 +67,8 @@ pub fn encode_boolean(value: bool) -> Vec<u8> {
     result
 }
 
+/// Encodes a bit string with a specified number of unused bits.
+/// DER requires the first byte to indicate unused bits.
 pub fn encode_bit_string(bits: &[u8], unused_bits: u8) -> Vec<u8> {
     let mut result = vec![Tag::BitString.into()];
     let mut content = vec![unused_bits];
@@ -72,6 +78,7 @@ pub fn encode_bit_string(bits: &[u8], unused_bits: u8) -> Vec<u8> {
     result
 }
 
+/// Encodes a byte slice as a DER-encoded OCTET STRING.
 pub fn encode_octet_string(data: &[u8]) -> Vec<u8> {
     let mut result = vec![Tag::OctetString.into()];
     result.extend(encode_length(data.len()));
@@ -79,6 +86,7 @@ pub fn encode_octet_string(data: &[u8]) -> Vec<u8> {
     result
 }
 
+/// Encodes a UTF-8 string as a DER-encoded UTF8String.
 pub fn encode_utf8_string(data: String) -> Vec<u8> {
     let mut result = vec![Tag::Utf8String.into()];
     let bytes = data.as_bytes();
@@ -86,6 +94,8 @@ pub fn encode_utf8_string(data: String) -> Vec<u8> {
     result.extend(bytes);
     result
 }
+
+/// Encodes a string as a DER-encoded PrintableString.
 pub fn encode_printable_string(data: String) -> Vec<u8> {
     let mut result = vec![Tag::PrintableString.into()];
     let bytes = data.as_bytes();
@@ -93,18 +103,21 @@ pub fn encode_printable_string(data: String) -> Vec<u8> {
     result.extend(bytes);
     result
 }
-// This is base-128 encoding of 113549.
-// The first byte encodes:
-// The first component (parts[0]) is always 0, 1, or 2.
-// The second component (parts[1]) must be less than 40 if the first is 0 or 1,
-// but can be larger if the first is 2.
-//
-// encode 1.2 ->
-// 1 * 40 + 2 = 42 → 0x2A
-//
-// 0x86: 10000110 → data bits 0000110 (0x06)→ continuation
-// 0xF7: 11110111 → data bits 01110111 (0x77)→ continuation
-// 0x0D: 00001101 → data bits 00001101 (0x0D)→ last byte
+
+/// Encodes an object identifier (OID) string as a DER-encoded OBJECT IDENTIFIER.
+/// Returns None if the OID is invalid.
+/// This is base-128 encoding of 113549.
+/// The first byte encodes:
+/// The first component (parts[0]) is always 0, 1, or 2.
+/// The second component (parts[1]) must be less than 40 if the first is 0 or 1,
+/// but can be larger if the first is 2.
+///
+/// encode 1.2 ->
+/// 1 * 40 + 2 = 42 → 0x2A
+///
+/// 0x86: 10000110 → data bits 0000110 (0x06)→ continuation
+/// 0xF7: 11110111 → data bits 01110111 (0x77)→ continuation
+/// 0x0D: 00001101 → data bits 00001101 (0x0D)→ last byte
 pub fn encode_object_identifier(oid: &str) -> Option<Vec<u8>> {
     let parts: Vec<u32> = oid.split('.').filter_map(|s| s.parse().ok()).collect();
     if parts.len() < 2 {
@@ -144,6 +157,8 @@ pub fn encode_object_identifier(oid: &str) -> Option<Vec<u8>> {
     Some(result)
 }
 
+/// Encodes a generalized time string in "YYYYMMDDHHMMSSZ" format.
+/// Returns None if the format is invalid.
 pub fn encode_generalized_time(datetime: &str) -> Option<Vec<u8>> {
     if !datetime.ends_with('Z') || datetime.len() != 15 {
         return None; // Must be in "YYYYMMDDHHMMSSZ" format
@@ -155,6 +170,9 @@ pub fn encode_generalized_time(datetime: &str) -> Option<Vec<u8>> {
     result.extend_from_slice(bytes);
     Some(result)
 }
+
+/// Encodes a UTC time string in "YYMMDDHHMMSSZ" format.
+/// Returns None if the format is invalid.
 pub fn encode_utc_time(datetime: &str) -> Option<Vec<u8>> {
     if !datetime.ends_with('Z') || datetime.len() != 13 {
         return None; // Must be in "YYMMDDHHMMSSZ" format
@@ -166,19 +184,27 @@ pub fn encode_utc_time(datetime: &str) -> Option<Vec<u8>> {
     result.extend_from_slice(bytes);
     Some(result)
 }
+
+/// Encodes a DER NULL value.
 pub fn encode_null() -> Vec<u8> {
     vec![Tag::Null.into(), 0x00]
 }
 
+/// Encodes a sequence of DER-encoded elements using the SEQUENCE tag.
 pub fn encode_sequence(elements: &[Vec<u8>]) -> Vec<u8> {
     encode_sequence_inner(elements, Tag::Sequence.into())
 }
+
+/// Encodes a sequence of DER-encoded elements using ContextSpecific0 tag.
 pub fn encode_sequence_0_tag(elements: &[Vec<u8>]) -> Vec<u8> {
     encode_sequence_inner(elements, Tag::ContextSpecific0.into())
 }
+
+/// Encodes a sequence of DER-encoded elements using ContextSpecific3 tag.
 pub fn encode_sequence_3_tag(elements: &[Vec<u8>]) -> Vec<u8> {
     encode_sequence_inner(elements, Tag::ContextSpecific3.into())
 }
+
 fn encode_sequence_inner(elements: &[Vec<u8>], tag: Tag) -> Vec<u8> {
     match tag {
         Tag::Sequence | Tag::ContextSpecific0 | Tag::ContextSpecific3 => {}
@@ -195,8 +221,11 @@ fn encode_sequence_inner(elements: &[Vec<u8>], tag: Tag) -> Vec<u8> {
     result.extend(content);
     result
 }
-// In DER, elements in a SET must be sorted by their encoded byte values (lexicographically).
-// So for full DER compliance, you should sort the encoded elements before combining them:
+
+/// Encodes a set of DER-encoded elements using the SET tag.
+/// Elements are sorted lexicographically for DER compliance.
+/// In DER, elements in a SET must be sorted by their encoded byte values (lexicographically).
+/// So for full DER compliance, you should sort the encoded elements before combining them:
 pub fn encode_set(elements: &[Vec<u8>]) -> Vec<u8> {
     let mut content: Vec<u8> = vec![];
     let mut sorted_elements = elements.to_vec();
@@ -209,6 +238,9 @@ pub fn encode_set(elements: &[Vec<u8>]) -> Vec<u8> {
     result.extend(content);
     result
 }
+
+/// Converts a `DecodedValue` enum into its corresponding DER-encoded byte vector.
+/// Returns `None` if the value cannot be encoded (e.g., invalid OID or time format)
 pub fn create_der_from_decoded_value(value: &DecodedValue) -> Option<Vec<u8>> {
     match value {
         DecodedValue::Integer(i) => Some(encode_integer(&BigInt::from(*i))),

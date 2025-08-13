@@ -195,19 +195,14 @@ pub fn encode_sequence(elements: &[Vec<u8>]) -> Vec<u8> {
     encode_inner(elements, Tag::Sequence.into())
 }
 
-/// Encodes a sequence of DER-encoded elements using Context0 tag.
-pub fn encode_context_0_tag(elements: &[Vec<u8>]) -> Vec<u8> {
-    encode_inner(elements, Tag::Context0.into())
-}
-
-/// Encodes a sequence of DER-encoded elements using Context3 tag.
-pub fn encode_context_3_tag(elements: &[Vec<u8>]) -> Vec<u8> {
-    encode_inner(elements, Tag::Context3.into())
+/// Encodes a sequence of DER-encoded elements using a context-specific tag.
+pub fn encode_context_tag(tag_number: u8, elements: &[Vec<u8>]) -> Vec<u8> {
+    encode_inner(elements, Tag::Context(tag_number))
 }
 
 fn encode_inner(elements: &[Vec<u8>], tag: Tag) -> Vec<u8> {
     match tag {
-        Tag::Sequence | Tag::Context0 | Tag::Context3 => {}
+        Tag::Sequence | Tag::Context(_) => {}
         _ => panic!("Invalid tag for sequence encoding"),
     }
 
@@ -261,16 +256,13 @@ pub fn create_der_from_decoded_value(value: &DecodedValue) -> Option<Vec<u8>> {
                 elements.iter().map(create_der_from_decoded_value).collect();
             encoded_elements.map(|els| encode_sequence(&els))
         }
-        DecodedValue::Context0(elements) => {
+
+        DecodedValue::Context(n, elements) => {
             let encoded_elements: Option<Vec<Vec<u8>>> =
                 elements.iter().map(create_der_from_decoded_value).collect();
-            encoded_elements.map(|els| encode_context_0_tag(&els))
+            encoded_elements.map(|els| encode_context_tag(*n, &els))
         }
-        DecodedValue::Context3(elements) => {
-            let encoded_elements: Option<Vec<Vec<u8>>> =
-                elements.iter().map(create_der_from_decoded_value).collect();
-            encoded_elements.map(|els| encode_context_3_tag(&els))
-        }
+
         DecodedValue::Set(elements) => {
             let encoded_elements: Option<Vec<Vec<u8>>> =
                 elements.iter().map(create_der_from_decoded_value).collect();

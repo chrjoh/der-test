@@ -19,29 +19,44 @@ pub enum Tag {
     GeneralizedTime = 0x18,
     Sequence = 0x30,
     Set = 0x31,
-    Context0 = 0xA0,
-    Context3 = 0xA3,
+    Context(u8),
 }
 
-impl Tag {
-    /// Constructed means the value is made up of other DER elements
-    /// (like a SEQUENCE, SET, or context-specific wrapper
-    pub fn is_constructed(&self) -> bool {
-        let byte = *self as u8;
-        byte & 0x20 != 0
-    }
-    ///Context-specific tags are used in ASN.1 to wrap values in
-    /// a specific context, often inside a SEQUENCE or CHOICE.
-    pub fn is_context_specific(&self) -> bool {
-        let byte = *self as u8;
-        byte & 0xC0 == 0x80
-    }
-}
+//impl Tag {
+//    /// Constructed means the value is made up of other DER elements
+//    /// (like a SEQUENCE, SET, or context-specific wrapper
+//    /// In ASN.1 DER encoding, the constructed bit is bit 6 (value 0x20).
+//    /// If this bit is set, the tag is considered constructed,
+//    pub fn is_constructed(&self) -> bool {
+//        let byte = *self as u8;
+//        byte & 0x20 != 0
+//    }
+//    ///Context-specific tags are used in ASN.1 to wrap values in
+//    /// a specific context, often inside a SEQUENCE or CHOICE.
+//    pub fn is_context_specific(&self) -> bool {
+//        let byte = *self as u8;
+//        byte & 0xC0 == 0x80
+//    }
+//}
 
 /// Converts a `Tag` into its corresponding `u8` value.
 impl From<Tag> for u8 {
     fn from(tag: Tag) -> Self {
-        tag as u8
+        match tag {
+            Tag::Integer => 0x02,
+            Tag::OctetString => 0x04,
+            Tag::Sequence => 0x30,
+            Tag::Set => 0x31,
+            Tag::Boolean => 0x01,
+            Tag::Utf8String => 0x0C,
+            Tag::BitString => 0x03,
+            Tag::ObjectIdentifier => 0x06,
+            Tag::GeneralizedTime => 0x18,
+            Tag::UtcTime => 0x17,
+            Tag::Null => 0x05,
+            Tag::PrintableString => 0x13,
+            Tag::Context(n) => 0xA0 | (n & 0x1F), // context-specific constructed tag
+        }
     }
 }
 
@@ -64,8 +79,7 @@ impl TryFrom<u8> for Tag {
             0x18 => Ok(Tag::GeneralizedTime),
             0x30 => Ok(Tag::Sequence),
             0x31 => Ok(Tag::Set),
-            0xA0 => Ok(Tag::Context0),
-            0xA3 => Ok(Tag::Context3),
+            b if b & 0xC0 == 0x80 && b & 0x20 != 0 => Ok(Tag::Context(b & 0x1F)),
             _ => Err(()),
         }
     }
@@ -87,8 +101,43 @@ pub enum DecodedValue {
     GeneralizedTime(String),                      // GeneralizedTime in "YYYYMMDDHHMMSSZ" format
     UtcTime(String),                              // UTCTime in "YYMMDDHHMMSSZ" format
     Sequence(Vec<DecodedValue>),                  // Sequence of values
-    Context0(Vec<DecodedValue>),                  // Context-specific sequence with tag 0
-    Context3(Vec<DecodedValue>),                  // Context-specific sequence with tag 3
-    Set(Vec<DecodedValue>),                       // Set of values (unordered, sorted in DER)
-    Unknown(u8, Vec<u8>),                         // Unknown tag with raw data
+    Context(u8, Vec<DecodedValue>),
+    Set(Vec<DecodedValue>), // Set of values (unordered, sorted in DER)
+    Unknown(u8, Vec<u8>),   // Unknown tag with raw data
+}
+// allowed tags, in Context
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ContextTag {
+    Tag0 = 0xA0,
+    Tag1 = 0xA1,
+    Tag2 = 0xA2,
+    Tag3 = 0xA3,
+    Tag4 = 0xA4,
+    Tag5 = 0xA5,
+    Tag6 = 0xA6,
+    Tag7 = 0xA7,
+    Tag8 = 0xA8,
+    Tag9 = 0xA9,
+    Tag10 = 0xAA,
+    Tag11 = 0xAB,
+    Tag12 = 0xAC,
+    Tag13 = 0xAD,
+    Tag14 = 0xAE,
+    Tag15 = 0xAF,
+    Tag16 = 0xB0,
+    Tag17 = 0xB1,
+    Tag18 = 0xB2,
+    Tag19 = 0xB3,
+    Tag20 = 0xB4,
+    Tag21 = 0xB5,
+    Tag22 = 0xB6,
+    Tag23 = 0xB7,
+    Tag24 = 0xB8,
+    Tag25 = 0xB9,
+    Tag26 = 0xBA,
+    Tag27 = 0xBB,
+    Tag28 = 0xBC,
+    Tag29 = 0xBD,
+    Tag30 = 0xBE,
+    Tag31 = 0xBF,
 }

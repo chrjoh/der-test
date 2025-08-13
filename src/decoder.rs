@@ -349,14 +349,14 @@ fn print_decoded_value_private(value: &DecodedValue, indent: usize, oid_map: &Ha
             println!("{indent_str}]");
         }
         DecodedValue::ContextSequence0(seq) => {
-            println!("{indent_str}Sequence0 [");
+            println!("{indent_str}Tag0 [");
             for item in seq {
                 print_decoded_value_private(item, indent + 4, oid_map);
             }
             println!("{indent_str}]");
         }
         DecodedValue::ContextSequence3(seq) => {
-            println!("{indent_str}Sequence3 [");
+            println!("{indent_str}Tag3 [");
             for item in seq {
                 print_decoded_value_private(item, indent + 4, oid_map);
             }

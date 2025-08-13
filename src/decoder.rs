@@ -399,71 +399,193 @@ fn print_vec_u8(data: &[u8], indent: usize) {
 fn get_oid_map() -> HashMap<&'static str, &'static str> {
     let mut oid_map = HashMap::new();
 
-    // Subject and Issuer fields
+    oid_map.insert("2.5.29.9", "subjectDirectoryAttributes");
+    oid_map.insert("2.5.29.14", "subjectKeyIdentifier");
+    oid_map.insert("2.5.29.15", "keyUsage");
+    oid_map.insert("2.5.29.16", "privateKeyUsagePeriod");
+    oid_map.insert("2.5.29.17", "subjectAltName");
+    oid_map.insert("2.5.29.18", "issuerAltName");
+    oid_map.insert("2.5.29.19", "basicConstraints");
+    oid_map.insert("2.5.29.20", "cRLNumber");
+    oid_map.insert("2.5.29.21", "reasonCode");
+    oid_map.insert("2.5.29.23", "instructionCode");
+    oid_map.insert("2.5.29.24", "invalidityDate");
+    oid_map.insert("2.5.29.27", "deltaCRLIndicator");
+    oid_map.insert("2.5.29.28", "issuingDistributionPoint");
+    oid_map.insert("2.5.29.29", "certificateIssuer");
+    oid_map.insert("2.5.29.30", "nameConstraints");
+    oid_map.insert("2.5.29.31", "cRLDistributionPoints");
+    oid_map.insert("2.5.29.32", "certificatePolicies");
+    oid_map.insert("2.5.29.33", "policyMappings");
+    oid_map.insert("2.5.29.35", "authorityKeyIdentifier");
+    oid_map.insert("2.5.29.36", "policyConstraints");
+    oid_map.insert("2.5.29.37", "extKeyUsage");
+    oid_map.insert("2.5.29.46", "freshestCRL");
+    oid_map.insert("2.5.29.54", "inhibitAnyPolicy");
     oid_map.insert("2.5.4.3", "commonName");
+    oid_map.insert("2.5.4.5", "serialNumber");
     oid_map.insert("2.5.4.6", "countryName");
-    oid_map.insert("2.5.4.10", "organizationName");
-    oid_map.insert("2.5.4.11", "organizationalUnitName");
     oid_map.insert("2.5.4.7", "localityName");
     oid_map.insert("2.5.4.8", "stateOrProvinceName");
     oid_map.insert("2.5.4.9", "streetAddress");
-    oid_map.insert("2.5.4.5", "serialNumber");
+    oid_map.insert("2.5.4.10", "organizationName");
+    oid_map.insert("2.5.4.11", "organizationUnitName");
+    oid_map.insert("2.5.4.12", "title");
+    oid_map.insert("2.5.4.17", "postalCode");
+    oid_map.insert("2.5.29.32.0", "anyPolicy");
+    oid_map.insert("2.5.29.37.0", "anyExtendedKeyUsage");
 
-    // Key identifiers and constraints
-    oid_map.insert("2.5.29.14", "subjectKeyIdentifier");
-    oid_map.insert("2.5.29.35", "authorityKeyIdentifier");
-    oid_map.insert("2.5.29.19", "basicConstraints");
-    oid_map.insert("2.5.29.15", "keyUsage");
-    oid_map.insert("2.5.29.37", "extendedKeyUsage");
+    oid_map.insert("2.23.140.1.2.1", "domain-validated");
+    oid_map.insert("2.23.140.1.2.2", "organization-validated");
+    oid_map.insert("2.23.140.1.2.3", "individual-validated");
 
-    // Alternative names
-    oid_map.insert("2.5.29.17", "subjectAltName");
-    oid_map.insert("2.5.29.18", "issuerAltName");
+    oid_map.insert("1.3.6.1.4.1.11129.2.4.2", "embeddedSCTList");
+    oid_map.insert("1.3.6.1.4.1.11129.2.4.3", "ctPoison");
+    oid_map.insert("1.3.6.1.4.1.11129.2.4.4", "ctPrecertificateSigning");
+    oid_map.insert("1.3.6.1.4.1.11129.2.4.5", "ocspSCTList");
+    oid_map.insert("1.3.6.1.5.5.7.1.29", "autonomousSysIds-v2");
+    oid_map.insert("1.3.6.1.5.5.7.1.1", "authorityInfoAccess");
+    oid_map.insert("1.3.6.1.5.5.7.1.7", "ipAddrBlocks");
+    oid_map.insert("1.3.6.1.5.5.7.1.8", "autonomousSysIds");
+    oid_map.insert("1.3.6.1.5.5.7.1.11", "subjectInfoAccess");
+    oid_map.insert("1.3.6.1.5.5.7.1.28", "ipAddrBlocks-v2");
+    oid_map.insert("1.3.6.1.5.5.7.3.1", "serverAuth");
+    oid_map.insert("1.3.6.1.5.5.7.3.2", "clientAuth");
+    oid_map.insert("1.3.6.1.5.5.7.3.3", "codeSigning");
+    oid_map.insert("1.3.6.1.5.5.7.3.4", "emailProtection");
+    oid_map.insert("1.3.6.1.5.5.7.3.8", "timeStamping");
+    oid_map.insert("1.3.6.1.5.5.7.3.9", "OCSPSigning");
+    oid_map.insert("1.3.6.1.5.5.7.3.30", "bgpsec-router");
+    oid_map.insert("1.3.6.1.5.5.7.2.2", "unotice");
+    oid_map.insert("1.3.6.1.5.5.7.14.2", "ipAddr-asNumber");
+    oid_map.insert("1.3.6.1.5.5.7.14.3", "ipAddr-asNumber-v2");
+    oid_map.insert("1.3.6.1.5.5.7.48.1", "ocsp");
+    oid_map.insert("1.3.6.1.5.5.7.48.2", "caIssuers");
+    oid_map.insert("1.3.6.1.5.5.7.48.5", "caRepository");
+    oid_map.insert("1.3.6.1.5.5.7.48.10", "rpkiManifest");
+    oid_map.insert("1.3.6.1.5.5.7.48.11", "signedObject");
+    oid_map.insert("1.3.6.1.5.5.7.48.13", "rpkiNotify");
 
-    // Certificate Revocation List (CRL) extensions
-    oid_map.insert("2.5.29.20", "CRLNumber");
-    oid_map.insert("2.5.29.27", "DeltaCRLIndicator");
-    oid_map.insert("2.5.29.28", "IssuingDistributionPoint");
-    oid_map.insert("2.5.29.46", "FreshestCRL");
-    oid_map.insert("2.5.29.21", "ReasonCode");
-    oid_map.insert("2.5.29.24", "InvalidityDate");
-    oid_map.insert("2.5.29.29", "CertificateIssuer");
-
-    // Signature algorithms (RSA, DSA, ECDSA)
+    oid_map.insert("1.2.840.113549.1.9.16.2.1", "receiptRequest");
+    oid_map.insert("1.2.840.113549.1.9.16.2.2", "securityLabel");
+    oid_map.insert("1.2.840.113549.1.9.16.2.3", "mlExpandHistory");
+    oid_map.insert("1.2.840.113549.1.9.16.2.4", "contentHint");
+    oid_map.insert("1.2.840.113549.1.9.16.2.5", "msgSigDigest");
+    oid_map.insert("1.2.840.113549.1.9.16.2.7", "contentIdentifier");
+    oid_map.insert("1.2.840.113549.1.9.16.2.9", "equivalentLabels");
+    oid_map.insert("1.2.840.113549.1.9.16.2.10", "contentReference");
+    oid_map.insert("1.2.840.113549.1.9.16.2.11", "encrypKeyPref");
+    oid_map.insert("1.2.840.113549.1.9.16.2.12", "signingCertificate");
+    oid_map.insert("1.2.840.113549.1.9.16.11.1", "preferBinaryInside");
+    oid_map.insert("1.2.840.113549.1.7.1", "data");
+    oid_map.insert("1.2.840.113549.1.7.2", "signedData");
+    oid_map.insert("1.2.840.113549.1.7.3", "envelopedData");
+    oid_map.insert("1.2.840.113549.1.7.4", "signedAndEnvelopedData");
+    oid_map.insert("1.2.840.113549.1.7.5", "digestedData");
+    oid_map.insert("1.2.840.113549.1.7.6", "encryptedData");
+    oid_map.insert("1.2.840.113549.1.9.16.1.1", "receipt");
+    oid_map.insert("1.2.840.113549.1.9.16.1.2", "authData");
+    oid_map.insert("1.2.840.113549.1.9.16.1.6", "contentInfo");
+    oid_map.insert("1.2.840.113549.1.9.16.1.24", "routeOriginAuthz");
+    oid_map.insert("1.2.840.113549.1.9.16.1.26", "rpkiManifest");
+    oid_map.insert("1.2.840.113549.1.9.16.1.35", "rpkiGhostbusters");
+    oid_map.insert("1.2.840.113549.1.9.16.1.47", "geofeedCSVwithCRLF");
+    oid_map.insert("1.2.840.113549.1.9.16.1.48", "signedChecklist");
+    oid_map.insert("1.2.840.113549.1.9.16.1.49", "ASPA");
+    oid_map.insert("1.2.840.113549.1.9.16.1.50", "signedTAL");
+    oid_map.insert("1.2.840.113549.1.12.10.1.1", "keyBag");
+    oid_map.insert("1.2.840.113549.1.12.10.1.2", "pkcs-8ShroudedKeyBag");
+    oid_map.insert("1.2.840.113549.1.12.10.1.3", "certBag");
+    oid_map.insert("1.2.840.113549.1.12.10.1.4", "crlBag");
+    oid_map.insert("1.2.840.113549.1.12.10.1.5", "secretBag");
+    oid_map.insert("1.2.840.113549.1.12.10.1.6", "safeContentsBag");
+    oid_map.insert("1.2.840.113549.1.12.1.1", "pbeWithSHAAnd128BitRC4");
+    oid_map.insert("1.2.840.113549.1.12.1.2", "pbeWithSHAAnd40BitRC4");
+    oid_map.insert("1.2.840.113549.1.12.1.3", "pbeWithSHAAnd3-KeyTripleDES-CBC");
+    oid_map.insert("1.2.840.113549.1.12.1.4", "pbeWithSHAAnd2-KeyTripleDES-CBC");
+    oid_map.insert("1.2.840.113549.1.12.1.5", "pbeWithSHAAnd128BitRC2-CBC");
+    oid_map.insert("1.2.840.113549.1.12.1.6", "pbewithSHAAnd40BitRC2-CBC");
+    oid_map.insert("1.2.840.113549.1.1.2", "md2WithRSAEncryption");
+    oid_map.insert("1.2.840.113549.1.1.3", "md4WithRSAEncryption");
+    oid_map.insert("1.2.840.113549.1.1.4", "md5WithRSAEncryption");
     oid_map.insert("1.2.840.113549.1.1.5", "sha1WithRSAEncryption");
+    oid_map.insert("1.2.840.113549.1.1.14", "sha224WithRSAEncryption");
     oid_map.insert("1.2.840.113549.1.1.11", "sha256WithRSAEncryption");
     oid_map.insert("1.2.840.113549.1.1.12", "sha384WithRSAEncryption");
     oid_map.insert("1.2.840.113549.1.1.13", "sha512WithRSAEncryption");
-    oid_map.insert("1.2.840.10040.4.3", "dsaWithSHA1");
-    oid_map.insert("2.16.840.1.101.3.4.3.1", "dsaWithSHA224");
-    oid_map.insert("2.16.840.1.101.3.4.3.2", "dsaWithSHA256");
-    oid_map.insert("1.2.840.10045.4.3.1", "ecdsaWithSHA224");
-    oid_map.insert("1.2.840.10045.4.3.2", "ecdsaWithSHA256");
-    oid_map.insert("1.2.840.10045.4.3.3", "ecdsaWithSHA384");
-    oid_map.insert("1.2.840.10045.4.3.4", "ecdsaWithSHA512");
-
-    // Public key algorithms
+    oid_map.insert("1.2.840.10040.4.3", "dsa-with-sha1");
+    oid_map.insert("1.2.840.113549.1.5.1", "pbeWithMD2AndDES-CBC");
+    oid_map.insert("1.2.840.113549.1.5.3", "pbeWithMD5AndDES-CBC");
+    oid_map.insert("1.2.840.113549.1.5.4", "pbeWithMD2AndRC2-CBC");
+    oid_map.insert("1.2.840.113549.1.5.6", "pbeWithMD5AndRC2-CBC");
+    oid_map.insert("1.2.840.113549.1.5.10", "pbeWithSHA1AndDES-CBC");
+    oid_map.insert("1.2.840.113549.1.5.11", "pbeWithSHA1AndRC2-CBC");
+    oid_map.insert("1.2.840.113549.1.5.12", "PBKDF2");
+    oid_map.insert("1.2.840.113549.1.5.13", "PBES2");
+    oid_map.insert("1.2.840.113549.1.5.14", "PBMAC1");
+    oid_map.insert("1.2.840.113549.2.7", "hmacWithSHA1");
+    oid_map.insert("1.2.840.113549.2.8", "hmacWithSHA224");
+    oid_map.insert("1.2.840.113549.2.9", "hmacWithSHA256");
+    oid_map.insert("1.2.840.113549.2.10", "hmacWithSHA384");
+    oid_map.insert("1.2.840.113549.2.11", "hmacWithSHA512");
+    oid_map.insert("1.2.840.113549.3.2", "RC2-CBC");
+    oid_map.insert("1.2.840.113549.3.7", "DES-EDE3-CBC");
+    oid_map.insert("1.2.840.113549.3.9", "RC5-CBC-Pad");
+    oid_map.insert("1.2.840.113549.1.9.1", "emailAddress");
+    oid_map.insert("1.2.840.113549.1.9.2", "unstructuredName");
+    oid_map.insert("1.2.840.113549.1.9.3", "contentType");
+    oid_map.insert("1.2.840.113549.1.9.4", "messageDigest");
+    oid_map.insert("1.2.840.113549.1.9.5", "signingTime");
+    oid_map.insert("1.2.840.113549.1.9.6", "counterSignature");
+    oid_map.insert("1.2.840.113549.1.9.7", "challengePassword");
+    oid_map.insert("1.2.840.113549.1.9.8", "unstructuredAddress");
+    oid_map.insert("1.2.840.113549.1.9.9", "extendedCertificateAttributes");
+    oid_map.insert("1.2.840.113549.1.9.10", "issuerAndSerialNumber");
+    oid_map.insert("1.2.840.113549.1.9.11", "passwordCheck");
+    oid_map.insert("1.2.840.113549.1.9.12", "publicKey");
+    oid_map.insert("1.2.840.113549.1.9.13", "signingDescription");
+    oid_map.insert("1.2.840.113549.1.9.14", "extensionRequest");
+    oid_map.insert("1.2.840.113549.1.9.15", "smimeCapabilities");
+    oid_map.insert("1.2.840.113549.1.9.20", "friendlyName");
+    oid_map.insert("1.2.840.113549.1.9.21", "localKeyId");
+    oid_map.insert("1.2.840.113549.1.1.8", "mgf1");
     oid_map.insert("1.2.840.113549.1.1.1", "rsaEncryption");
-    oid_map.insert("1.2.840.10040.4.1", "dsa");
+    oid_map.insert("1.2.840.113549.1.1.10", "rsassa-pss");
     oid_map.insert("1.2.840.10045.2.1", "ecPublicKey");
+    oid_map.insert("1.2.840.10040.4.1", "dsa");
+    oid_map.insert("1.2.840.10045.1.1", "prime-field");
+    oid_map.insert("1.2.840.10045.1.2", "characteristic-two-field");
+    oid_map.insert("1.2.840.10045.1.2.3.1", "gnBasis");
+    oid_map.insert("1.2.840.10045.1.2.3.2", "tpBasis");
+    oid_map.insert("1.2.840.10045.1.2.3.3", "ppBasis");
+    oid_map.insert("1.2.840.113549.2.2", "md2");
+    oid_map.insert("1.2.840.113549.2.4", "md4");
+    oid_map.insert("1.2.840.113549.2.5", "md5");
+    oid_map.insert("1.2.840.10045.4.1", "ecdsa-with-SHA1");
+    oid_map.insert("1.2.840.10045.4.3.1", "ecdsa-with-SHA224");
+    oid_map.insert("1.2.840.10045.4.3.2", "ecdsa-with-SHA256");
+    oid_map.insert("1.2.840.10045.4.3.3", "ecdsa-with-SHA384");
+    oid_map.insert("1.2.840.10045.4.3.4", "ecdsa-with-SHA512");
+    oid_map.insert("1.2.840.10045.3.1.7", "secp256r1");
 
-    // Named elliptic curves
     oid_map.insert("1.3.132.0.33", "secp224r1");
     oid_map.insert("1.3.132.0.34", "secp384r1");
     oid_map.insert("1.3.132.0.35", "secp521r1");
-    oid_map.insert("1.2.840.10045.3.1.7", "prime256v1");
+    oid_map.insert("1.3.14.3.2.26", "sha1");
+    oid_map.insert("1.3.101.110", "x25519");
+    oid_map.insert("1.3.101.111", "x448");
+    oid_map.insert("1.3.101.112", "ed25519");
+    oid_map.insert("1.3.101.113", "ed448");
 
-    // EdDSA algorithm
-    oid_map.insert("1.3.101.112", "ED25519");
-
-    // Extended key usages
-    oid_map.insert("1.3.6.1.5.5.7.3.1", "serverAuth");
-    oid_map.insert("1.3.6.1.5.5.7.3.2", "clientAuth");
-
-    // Authority info and policies
-    oid_map.insert("1.3.6.1.5.5.7.1.1", "authorityInfoAccess");
-    oid_map.insert("2.5.29.31", "cRLDistributionPoints");
-    oid_map.insert("2.5.29.32", "certificatePolicies");
+    oid_map.insert("2.16.840.1.101.3.4.2.4", "sha224");
+    oid_map.insert("2.16.840.1.101.3.4.2.1", "sha256");
+    oid_map.insert("2.16.840.1.101.3.4.2.2", "sha384");
+    oid_map.insert("2.16.840.1.101.3.4.2.3", "sha512");
+    oid_map.insert("2.16.840.1.101.3.4.1.2", "AES-128-CBC");
+    oid_map.insert("2.16.840.1.101.3.4.1.22", "AES-192-CBC");
+    oid_map.insert("2.16.840.1.101.3.4.1.42", "AES-256-CBC");
+    oid_map.insert("2.16.840.1.101.3.4.3.1", "dsa-with-sha224");
+    oid_map.insert("2.16.840.1.101.3.4.3.2", "dsa-with-sha256");
 
     oid_map
 }

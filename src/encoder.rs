@@ -192,7 +192,7 @@ pub fn encode_null() -> Vec<u8> {
 
 /// Encodes a sequence of DER-encoded elements using the SEQUENCE tag.
 pub fn encode_sequence(elements: &[Vec<u8>]) -> Vec<u8> {
-    encode_inner(elements, Tag::Sequence.into())
+    encode_inner(elements, Tag::Sequence)
 }
 
 /// Encodes a sequence of DER-encoded elements using a context-specific tag.

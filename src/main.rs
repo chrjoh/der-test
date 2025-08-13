@@ -4,8 +4,9 @@ mod encoder;
 mod types;
 use crate::decoder::{decode, print_decoded_value};
 use crate::encoder::{
-    create_der_from_decoded_value, encode_bit_string, encode_boolean, encode_integer,
-    encode_object_identifier, encode_octet_string, encode_sequence, encode_set, encode_utf8_string,
+    create_der_from_decoded_value, encode_bit_string, encode_boolean, encode_context_tag,
+    encode_integer, encode_object_identifier, encode_octet_string, encode_sequence, encode_set,
+    encode_utf8_string,
 };
 use num_bigint::BigInt;
 
@@ -104,7 +105,7 @@ fn run_test_data() {
         seq_encoded2,
         encode_set(&[encode_utf8_string("my encoder".to_string())]),
         bit_encoded,
-        oid_encoded,
+        encode_context_tag(1, &[oid_encoded]),
     ]);
 
     println!("DER-encoded SEQUENCE: {:?}", set_encoded);

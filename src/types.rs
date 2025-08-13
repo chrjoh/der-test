@@ -19,8 +19,8 @@ pub enum Tag {
     GeneralizedTime = 0x18,
     Sequence = 0x30,
     Set = 0x31,
-    ContextSpecific0 = 0xA0, // hard coded to be followed by a seq not wrapped
-    ContextSpecific3 = 0xA3, // hard coded to be followed by a seq not wrapped
+    Context0 = 0xA0,
+    Context3 = 0xA3,
 }
 
 impl Tag {
@@ -64,8 +64,8 @@ impl TryFrom<u8> for Tag {
             0x18 => Ok(Tag::GeneralizedTime),
             0x30 => Ok(Tag::Sequence),
             0x31 => Ok(Tag::Set),
-            0xA0 => Ok(Tag::ContextSpecific0),
-            0xA3 => Ok(Tag::ContextSpecific3),
+            0xA0 => Ok(Tag::Context0),
+            0xA3 => Ok(Tag::Context3),
             _ => Err(()),
         }
     }
@@ -87,8 +87,8 @@ pub enum DecodedValue {
     GeneralizedTime(String),                      // GeneralizedTime in "YYYYMMDDHHMMSSZ" format
     UtcTime(String),                              // UTCTime in "YYMMDDHHMMSSZ" format
     Sequence(Vec<DecodedValue>),                  // Sequence of values
-    ContextSequence0(Vec<DecodedValue>),          // Context-specific sequence with tag 0
-    ContextSequence3(Vec<DecodedValue>),          // Context-specific sequence with tag 3
+    Context0(Vec<DecodedValue>),                  // Context-specific sequence with tag 0
+    Context3(Vec<DecodedValue>),                  // Context-specific sequence with tag 3
     Set(Vec<DecodedValue>),                       // Set of values (unordered, sorted in DER)
     Unknown(u8, Vec<u8>),                         // Unknown tag with raw data
 }

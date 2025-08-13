@@ -232,12 +232,8 @@ fn decode_element(data: &[u8]) -> Option<(DecodedValue, usize)> {
         Ok(tag) => match tag {
             Tag::Integer => decode_integer_value(value_bytes),
             Tag::OctetString => decode_octet_string_value(value_bytes),
-            Tag::ContextSpecific0 => {
-                decode_sequence_with_variant(value_bytes, DecodedValue::ContextSequence0)
-            }
-            Tag::ContextSpecific3 => {
-                decode_sequence_with_variant(value_bytes, DecodedValue::ContextSequence3)
-            }
+            Tag::Context0 => decode_sequence_with_variant(value_bytes, DecodedValue::Context0),
+            Tag::Context3 => decode_sequence_with_variant(value_bytes, DecodedValue::Context3),
             Tag::Sequence => decode_sequence_with_variant(value_bytes, DecodedValue::Sequence),
             Tag::Set => decode_set_value(value_bytes),
             Tag::Boolean => decode_boolean_value(value_bytes),
@@ -348,14 +344,14 @@ fn print_decoded_value_private(value: &DecodedValue, indent: usize, oid_map: &Ha
             }
             println!("{indent_str}]");
         }
-        DecodedValue::ContextSequence0(seq) => {
+        DecodedValue::Context0(seq) => {
             println!("{indent_str}Tag0 [");
             for item in seq {
                 print_decoded_value_private(item, indent + 4, oid_map);
             }
             println!("{indent_str}]");
         }
-        DecodedValue::ContextSequence3(seq) => {
+        DecodedValue::Context3(seq) => {
             println!("{indent_str}Tag3 [");
             for item in seq {
                 print_decoded_value_private(item, indent + 4, oid_map);

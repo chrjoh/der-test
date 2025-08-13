@@ -192,22 +192,22 @@ pub fn encode_null() -> Vec<u8> {
 
 /// Encodes a sequence of DER-encoded elements using the SEQUENCE tag.
 pub fn encode_sequence(elements: &[Vec<u8>]) -> Vec<u8> {
-    encode_sequence_inner(elements, Tag::Sequence.into())
+    encode_inner(elements, Tag::Sequence.into())
 }
 
-/// Encodes a sequence of DER-encoded elements using ContextSpecific0 tag.
-pub fn encode_sequence_0_tag(elements: &[Vec<u8>]) -> Vec<u8> {
-    encode_sequence_inner(elements, Tag::ContextSpecific0.into())
+/// Encodes a sequence of DER-encoded elements using Context0 tag.
+pub fn encode_context_0_tag(elements: &[Vec<u8>]) -> Vec<u8> {
+    encode_inner(elements, Tag::Context0.into())
 }
 
-/// Encodes a sequence of DER-encoded elements using ContextSpecific3 tag.
-pub fn encode_sequence_3_tag(elements: &[Vec<u8>]) -> Vec<u8> {
-    encode_sequence_inner(elements, Tag::ContextSpecific3.into())
+/// Encodes a sequence of DER-encoded elements using Context3 tag.
+pub fn encode_context_3_tag(elements: &[Vec<u8>]) -> Vec<u8> {
+    encode_inner(elements, Tag::Context3.into())
 }
 
-fn encode_sequence_inner(elements: &[Vec<u8>], tag: Tag) -> Vec<u8> {
+fn encode_inner(elements: &[Vec<u8>], tag: Tag) -> Vec<u8> {
     match tag {
-        Tag::Sequence | Tag::ContextSpecific0 | Tag::ContextSpecific3 => {}
+        Tag::Sequence | Tag::Context0 | Tag::Context3 => {}
         _ => panic!("Invalid tag for sequence encoding"),
     }
 
@@ -261,15 +261,15 @@ pub fn create_der_from_decoded_value(value: &DecodedValue) -> Option<Vec<u8>> {
                 elements.iter().map(create_der_from_decoded_value).collect();
             encoded_elements.map(|els| encode_sequence(&els))
         }
-        DecodedValue::ContextSequence0(elements) => {
+        DecodedValue::Context0(elements) => {
             let encoded_elements: Option<Vec<Vec<u8>>> =
                 elements.iter().map(create_der_from_decoded_value).collect();
-            encoded_elements.map(|els| encode_sequence_0_tag(&els))
+            encoded_elements.map(|els| encode_context_0_tag(&els))
         }
-        DecodedValue::ContextSequence3(elements) => {
+        DecodedValue::Context3(elements) => {
             let encoded_elements: Option<Vec<Vec<u8>>> =
                 elements.iter().map(create_der_from_decoded_value).collect();
-            encoded_elements.map(|els| encode_sequence_3_tag(&els))
+            encoded_elements.map(|els| encode_context_3_tag(&els))
         }
         DecodedValue::Set(elements) => {
             let encoded_elements: Option<Vec<Vec<u8>>> =

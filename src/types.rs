@@ -19,8 +19,23 @@ pub enum Tag {
     GeneralizedTime = 0x18,
     Sequence = 0x30,
     Set = 0x31,
-    ContextSpecific0 = 0xA0, // hard coded to be followed by a seq
-    ContextSpecific3 = 0xA3, // hard coded to be followed by a seq
+    ContextSpecific0 = 0xA0, // hard coded to be followed by a seq not wrapped
+    ContextSpecific3 = 0xA3, // hard coded to be followed by a seq not wrapped
+}
+
+impl Tag {
+    /// Constructed means the value is made up of other DER elements
+    /// (like a SEQUENCE, SET, or context-specific wrapper
+    pub fn is_constructed(&self) -> bool {
+        let byte = *self as u8;
+        byte & 0x20 != 0
+    }
+    ///Context-specific tags are used in ASN.1 to wrap values in
+    /// a specific context, often inside a SEQUENCE or CHOICE.
+    pub fn is_context_specific(&self) -> bool {
+        let byte = *self as u8;
+        byte & 0xC0 == 0x80
+    }
 }
 
 /// Converts a `Tag` into its corresponding `u8` value.

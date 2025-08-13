@@ -229,25 +229,27 @@ fn decode_element(data: &[u8]) -> Option<(DecodedValue, usize)> {
     let tag = Tag::try_from(tag_byte);
 
     let decoded = match tag {
-        Ok(Tag::Integer) => decode_integer_value(value_bytes),
-        Ok(Tag::OctetString) => decode_octet_string_value(value_bytes),
-        Ok(Tag::ContextSpecific0) => {
-            decode_sequence_with_variant(value_bytes, DecodedValue::ContextSequence0)
-        }
-        Ok(Tag::ContextSpecific3) => {
-            decode_sequence_with_variant(value_bytes, DecodedValue::ContextSequence3)
-        }
-        Ok(Tag::Sequence) => decode_sequence_with_variant(value_bytes, DecodedValue::Sequence),
-        Ok(Tag::Set) => decode_set_value(value_bytes),
-        Ok(Tag::Boolean) => decode_boolean_value(value_bytes),
-        Ok(Tag::Utf8String) => decode_utf8_string_value(value_bytes),
-        Ok(Tag::BitString) => decode_bit_string_value(value_bytes),
-        Ok(Tag::ObjectIdentifier) => decode_object_identifier_value(value_bytes),
-        Ok(Tag::GeneralizedTime) => decode_generalized_time_value(value_bytes),
-        Ok(Tag::UtcTime) => decode_utc_time_value(value_bytes),
-        Ok(Tag::Null) => decode_null_value(value_bytes),
-        Ok(Tag::PrintableString) => decode_printable_string_value(value_bytes),
-        _ => Some(DecodedValue::Unknown(tag_byte, value_bytes.to_vec())),
+        Ok(tag) => match tag {
+            Tag::Integer => decode_integer_value(value_bytes),
+            Tag::OctetString => decode_octet_string_value(value_bytes),
+            Tag::ContextSpecific0 => {
+                decode_sequence_with_variant(value_bytes, DecodedValue::ContextSequence0)
+            }
+            Tag::ContextSpecific3 => {
+                decode_sequence_with_variant(value_bytes, DecodedValue::ContextSequence3)
+            }
+            Tag::Sequence => decode_sequence_with_variant(value_bytes, DecodedValue::Sequence),
+            Tag::Set => decode_set_value(value_bytes),
+            Tag::Boolean => decode_boolean_value(value_bytes),
+            Tag::Utf8String => decode_utf8_string_value(value_bytes),
+            Tag::BitString => decode_bit_string_value(value_bytes),
+            Tag::ObjectIdentifier => decode_object_identifier_value(value_bytes),
+            Tag::GeneralizedTime => decode_generalized_time_value(value_bytes),
+            Tag::UtcTime => decode_utc_time_value(value_bytes),
+            Tag::Null => decode_null_value(value_bytes),
+            Tag::PrintableString => decode_printable_string_value(value_bytes),
+        },
+        Err(_) => Some(DecodedValue::Unknown(tag_byte, value_bytes.to_vec())),
     }?;
 
     Some((decoded, end))
@@ -449,6 +451,9 @@ fn get_oid_map() -> HashMap<&'static str, &'static str> {
     oid_map.insert("1.3.132.0.34", "secp384r1");
     oid_map.insert("1.3.132.0.35", "secp521r1");
     oid_map.insert("1.2.840.10045.3.1.7", "prime256v1");
+
+    // EdDSA algorithm
+    oid_map.insert("1.3.101.112", "ED25519");
 
     // Extended key usages
     oid_map.insert("1.3.6.1.5.5.7.3.1", "serverAuth");

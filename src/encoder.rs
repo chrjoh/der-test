@@ -252,6 +252,8 @@ pub fn create_der_from_decoded_value(value: &DecodedValue) -> Option<Vec<u8>> {
         DecodedValue::GeneralizedTime(dt) => encode_generalized_time(dt),
         DecodedValue::UtcTime(dt) => encode_utc_time(dt),
         DecodedValue::Sequence(elements) => {
+            // If all items are Some(value), collect them into a Vec<T> and returns Some(Vec<T>).
+            // if any are None stop and return None
             let encoded_elements: Option<Vec<Vec<u8>>> =
                 elements.iter().map(create_der_from_decoded_value).collect();
             encoded_elements.map(|els| encode_sequence(&els))

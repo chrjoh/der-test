@@ -77,6 +77,16 @@ fn decode_printable_string_value(bytes: &[u8]) -> Option<DecodedValue> {
         Err(_) => None,
     }
 }
+// Note that graphic_string can conation non utf-8 so this is a hack
+fn decode_graphic_string_value(bytes: &[u8]) -> Option<DecodedValue> {
+    match std::str::from_utf8(bytes) {
+        Ok(s) => Some(DecodedValue::GraphicString(s.to_string())),
+        Err(_) => Some(DecodedValue::GraphicString(
+            String::from_utf8_lossy(bytes).to_string(),
+        )),
+    }
+}
+
 fn decode_bit_string_value(bytes: &[u8]) -> Option<DecodedValue> {
     if bytes.is_empty() {
         return None;
@@ -249,6 +259,7 @@ fn decode_element(data: &[u8]) -> Option<(DecodedValue, usize)> {
             Tag::Set => decode_set_value(value_bytes),
             Tag::Boolean => decode_boolean_value(value_bytes),
             Tag::Utf8String => decode_utf8_string_value(value_bytes),
+            Tag::GraphicString => decode_graphic_string_value(value_bytes),
             Tag::BitString => decode_bit_string_value(value_bytes),
             Tag::ObjectIdentifier => decode_object_identifier_value(value_bytes),
             Tag::GeneralizedTime => decode_generalized_time_value(value_bytes),
@@ -319,6 +330,7 @@ fn print_decoded_value_private(value: &DecodedValue, indent: usize, oid_map: &Ha
         DecodedValue::Boolean(b) => println!("{indent_str}Boolean({})", b),
         DecodedValue::Utf8String(s) => println!("{indent_str}Utf8String({})", s),
         DecodedValue::PrintableString(s) => println!("{indent_str}PrintableString({})", s),
+        DecodedValue::GraphicString(s) => println!("{indent_str}GraphicString({})", s),
         DecodedValue::GeneralizedTime(s) => println!("{indent_str}GeneralizedTime({})", s),
         DecodedValue::UtcTime(s) => println!("{indent_str}UtcTime({})", s),
         DecodedValue::ObjectIdentifier(oid) => {
@@ -632,6 +644,32 @@ mod tests {
         assert_eq!(
             decoded,
             DecodedValue::OctetString(vec![0xDE, 0xAD, 0xBE, 0xEF])
+        );
+    }
+    #[test]
+    fn test_graphical_string() {
+        let encoded = vec![
+            Tag::GraphicString.into(),
+            0x0e,
+            0x4b,
+            0x49,
+            0x4e,
+            0x47,
+            0x44,
+            0x4f,
+            0x4d,
+            0x2e,
+            0x48,
+            0x45,
+            0x41,
+            0x52,
+            0x54,
+            0x53,
+        ];
+        let decoded = decode(encoded).unwrap();
+        assert_eq!(
+            decoded,
+            DecodedValue::GraphicString("KINGDOM.HEARTS".to_string())
         );
     }
 

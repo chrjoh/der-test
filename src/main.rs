@@ -124,6 +124,17 @@ fn run_test_data() {
         }
         Err(e) => eprintln!("Error: {}", e),
     }
+    // test with graphic string (0x1b) Note that the decode try to get utf-8 with utf8_lossy parser
+    let raw_string = vec![
+        0x1b, 0x0e, 0x4b, 0x49, 0x4e, 0x47, 0x44, 0x4f, 0x4d, 0x2e, 0x48, 0x45, 0x41, 0x52, 0x54,
+        0x53,
+    ];
+    match decode(raw_string) {
+        Ok(decoded) => {
+            print_decoded_value(&decoded, 1);
+        }
+        Err(e) => eprintln!("Error: {}", e),
+    }
 }
 
 fn der_to_pem(der: &[u8], label: &str) -> String {

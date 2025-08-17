@@ -104,6 +104,14 @@ pub fn encode_printable_string(data: String) -> Vec<u8> {
     result
 }
 
+/// Encodes a graphic_string as a DER-encoded GraphicString.
+pub fn encode_graphic_string(data: String) -> Vec<u8> {
+    let mut result = vec![Tag::GraphicString.into()];
+    let bytes = data.as_bytes();
+    result.extend(encode_length(bytes.len()));
+    result.extend(bytes);
+    result
+}
 /// Encodes an object identifier (OID) string as a DER-encoded OBJECT IDENTIFIER.
 /// Returns None if the OID is invalid.
 /// This is base-128 encoding of 113549.
@@ -243,6 +251,7 @@ pub fn create_der_from_decoded_value(value: &DecodedValue) -> Option<Vec<u8>> {
         DecodedValue::Boolean(b) => Some(encode_boolean(*b)),
         DecodedValue::Utf8String(s) => Some(encode_utf8_string(s.clone())),
         DecodedValue::PrintableString(s) => Some(encode_printable_string(s.clone())),
+        DecodedValue::GraphicString(s) => Some(encode_graphic_string(s.clone())),
         DecodedValue::OctetString(data) => Some(encode_octet_string(data)),
         DecodedValue::BitString { unused_bits, data } => {
             Some(encode_bit_string(data, *unused_bits))
@@ -359,6 +368,32 @@ mod tests {
                 b'r',
                 b'l',
                 b'd'
+            ]
+        );
+    }
+
+    #[test]
+    fn test_encode_graphical_string() {
+        let s = "KINGDOM.HEARTS".to_string();
+        assert_eq!(
+            encode_graphic_string(s),
+            vec![
+                Tag::GraphicString.into(),
+                0x0e,
+                b'K',
+                b'I',
+                b'N',
+                b'G',
+                b'D',
+                b'O',
+                b'M',
+                b'.',
+                b'H',
+                b'E',
+                b'A',
+                b'R',
+                b'T',
+                b'S',
             ]
         );
     }

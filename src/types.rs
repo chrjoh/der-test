@@ -17,6 +17,7 @@ pub enum Tag {
     PrintableString = 0x13,
     UtcTime = 0x17,
     GeneralizedTime = 0x18,
+    GraphicString = 0x1B,
     Sequence = 0x30,
     Set = 0x31,
     Context(u8),
@@ -55,6 +56,7 @@ impl From<Tag> for u8 {
             Tag::UtcTime => 0x17,
             Tag::Null => 0x05,
             Tag::PrintableString => 0x13,
+            Tag::GraphicString => 0x1B,
             Tag::Context(n) => 0xA0 | (n & 0x1F), // context-specific constructed tag
         }
     }
@@ -79,6 +81,7 @@ impl TryFrom<u8> for Tag {
             0x18 => Ok(Tag::GeneralizedTime),
             0x30 => Ok(Tag::Sequence),
             0x31 => Ok(Tag::Set),
+            0x1B => Ok(Tag::GraphicString),
             b if b & 0xC0 == 0x80 && b & 0x20 != 0 => Ok(Tag::Context(b & 0x1F)),
             _ => Err(()),
         }
@@ -89,6 +92,7 @@ impl TryFrom<u8> for Tag {
 /// Used for converting between DER and Rust-native types.
 #[derive(Debug, PartialEq)]
 pub enum DecodedValue {
+    GraphicString(String),
     Integer(i64),                                 // Small integer value
     BigInteger(BigInt),                           // Arbitrary precision integer
     Boolean(bool),                                // Boolean value
